@@ -1,0 +1,25 @@
+D:\Users\CHIHHAOLAI\Documents\Visual Studio 2010\Projects\OpenHardwareMonitorLCD\OpenHardwareMonitorLCD\bin\Release\OpenHardwareMonitorLib.dll
+D:\Users\CHIHHAOLAI\Documents\Visual Studio 2010\Projects\OpenHardwareMonitorLCD\OpenHardwareMonitorLCD\obj\x86\Release\OpenHardwareMonitorLCD.Form1.resources
+D:\Users\CHIHHAOLAI\Documents\Visual Studio 2010\Projects\OpenHardwareMonitorLCD\OpenHardwareMonitorLCD\obj\x86\Release\OpenHardwareMonitorLCD.csproj.GenerateResource.Cache
+D:\Users\CHIHHAOLAI\Documents\Visual Studio 2010\Projects\OpenHardwareMonitorLCD\OpenHardwareMonitorLCD\bin\Release\OpenHardwareMonitorLCD.exe
+D:\Users\CHIHHAOLAI\Documents\Visual Studio 2010\Projects\OpenHardwareMonitorLCD\OpenHardwareMonitorLCD\bin\Release\OpenHardwareMonitorLCD.pdb
+D:\Users\CHIHHAOLAI\Documents\Visual Studio 2010\Projects\OpenHardwareMonitorLCD\OpenHardwareMonitorLCD\obj\x86\Release\OpenHardwareMonitorLCD.Properties.Resources.resources
+D:\Users\CHIHHAOLAI\Documents\Visual Studio 2010\Projects\OpenHardwareMonitorLCD\OpenHardwareMonitorLCD\obj\x86\Release\OpenHardwareMonitorLCD.exe
+D:\Users\CHIHHAOLAI\Documents\Visual Studio 2010\Projects\OpenHardwareMonitorLCD\OpenHardwareMonitorLCD\obj\x86\Release\OpenHardwareMonitorLCD.pdb
+D:\Users\CHIHHAOLAI\Documents\Arduino\OpenHardwareMonitorLCD\OpenHardwareMonitorLCD\obj\x86\Release\OpenHardwareMonitorLCD.exe
+D:\Users\CHIHHAOLAI\Documents\Arduino\OpenHardwareMonitorLCD\OpenHardwareMonitorLCD\obj\x86\Release\OpenHardwareMonitorLCD.pdb
+D:\Users\CHIHHAOLAI\Documents\Arduino\OpenHardwareMonitorLCD\OpenHardwareMonitorLCD\obj\x86\Release\OpenHardwareMonitorLCD.Form1.resources
+D:\Users\CHIHHAOLAI\Documents\Arduino\OpenHardwareMonitorLCD\OpenHardwareMonitorLCD\obj\x86\Release\OpenHardwareMonitorLCD.Properties.Resources.resources
+D:\Users\CHIHHAOLAI\Documents\Arduino\OpenHardwareMonitorLCD\OpenHardwareMonitorLCD\obj\x86\Release\OpenHardwareMonitorLCD.csproj.GenerateResource.Cache
+D:\Users\CHIHHAOLAI\Documents\Arduino\OpenHardwareMonitorLCD\OpenHardwareMonitorLCD\bin\Release\OpenHardwareMonitorLCD.exe
+D:\Users\CHIHHAOLAI\Documents\Arduino\OpenHardwareMonitorLCD\OpenHardwareMonitorLCD\bin\Release\OpenHardwareMonitorLCD.pdb
+D:\Users\CHIHHAOLAI\Documents\Arduino\OpenHardwareMonitorLCD\OpenHardwareMonitorLCD\bin\Release\OpenHardwareMonitorLib.dll
+C:\GitHub\Arduino_Pc_Monitor\OpenInfo_LCD_C#\OpenHardwareMonitorLCD\obj\x86\Release\OpenHardwareMonitorLCD.exe
+C:\GitHub\Arduino_Pc_Monitor\OpenInfo_LCD_C#\OpenHardwareMonitorLCD\obj\x86\Release\OpenHardwareMonitorLCD.pdb
+C:\GitHub\Arduino_Pc_Monitor\OpenInfo_LCD_C#\OpenHardwareMonitorLCD\bin\Release\OpenHardwareMonitorLCD.exe
+C:\GitHub\Arduino_Pc_Monitor\OpenInfo_LCD_C#\OpenHardwareMonitorLCD\bin\Release\OpenHardwareMonitorLCD.pdb
+C:\GitHub\Arduino_Pc_Monitor\OpenInfo_LCD_C#\OpenHardwareMonitorLCD\bin\Release\OpenHardwareMonitorLib.dll
+C:\GitHub\Arduino_Pc_Monitor\OpenInfo_LCD_C#\OpenHardwareMonitorLCD\obj\x86\Release\OpenHardwareMonitorLCD.csprojResolveAssemblyReference.cache
+C:\GitHub\Arduino_Pc_Monitor\OpenInfo_LCD_C#\OpenHardwareMonitorLCD\obj\x86\Release\OpenHardwareMonitorLCD.Form1.resources
+C:\GitHub\Arduino_Pc_Monitor\OpenInfo_LCD_C#\OpenHardwareMonitorLCD\obj\x86\Release\OpenHardwareMonitorLCD.Properties.Resources.resources
+C:\GitHub\Arduino_Pc_Monitor\OpenInfo_LCD_C#\OpenHardwareMonitorLCD\obj\x86\Release\OpenHardwareMonitorLCD.csproj.GenerateResource.Cache

@@ -1,0 +1,13 @@
+D:\Dropbox\GitHub\Arduino-Projects\Arduino_Monitor\Arduino_Monitor\obj\x86\Debug\Arduino_Monitor.csproj.GenerateResource.Cache
+D:\Dropbox\GitHub\Arduino-Projects\Arduino_Monitor\Arduino_Monitor\bin\Debug\HWiNFO_LCD.exe.config
+D:\Dropbox\GitHub\Arduino-Projects\Arduino_Monitor\Arduino_Monitor\bin\Debug\HWiNFO_LCD.exe.manifest
+D:\Dropbox\GitHub\Arduino-Projects\Arduino_Monitor\Arduino_Monitor\bin\Debug\HWiNFO_LCD.application
+D:\Dropbox\GitHub\Arduino-Projects\Arduino_Monitor\Arduino_Monitor\bin\Debug\HWiNFO_LCD.exe
+D:\Dropbox\GitHub\Arduino-Projects\Arduino_Monitor\Arduino_Monitor\bin\Debug\HWiNFO_LCD.pdb
+D:\Dropbox\GitHub\Arduino-Projects\Arduino_Monitor\Arduino_Monitor\obj\x86\Debug\Arduino_Monitor.Form1.resources
+D:\Dropbox\GitHub\Arduino-Projects\Arduino_Monitor\Arduino_Monitor\obj\x86\Debug\HWiNFO_LCD.Properties.Resources.resources
+D:\Dropbox\GitHub\Arduino-Projects\Arduino_Monitor\Arduino_Monitor\obj\x86\Debug\HWiNFO_LCD.TrustInfo.xml
+D:\Dropbox\GitHub\Arduino-Projects\Arduino_Monitor\Arduino_Monitor\obj\x86\Debug\HWiNFO_LCD.exe.manifest
+D:\Dropbox\GitHub\Arduino-Projects\Arduino_Monitor\Arduino_Monitor\obj\x86\Debug\HWiNFO_LCD.application
+D:\Dropbox\GitHub\Arduino-Projects\Arduino_Monitor\Arduino_Monitor\obj\x86\Debug\HWiNFO_LCD.exe
+D:\Dropbox\GitHub\Arduino-Projects\Arduino_Monitor\Arduino_Monitor\obj\x86\Debug\HWiNFO_LCD.pdb

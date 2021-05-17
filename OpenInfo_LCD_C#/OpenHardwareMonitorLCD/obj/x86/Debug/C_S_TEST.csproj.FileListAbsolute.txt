@@ -1,0 +1,8 @@
+D:\Users\CHIHHAOLAI\Documents\Visual Studio 2010\Projects\C_S_TEST\C_S_TEST\obj\x86\Debug\C_S_TEST.csproj.GenerateResource.Cache
+D:\Users\CHIHHAOLAI\Documents\Visual Studio 2010\Projects\C_S_TEST\C_S_TEST\obj\x86\Debug\C_S_TEST.Form1.resources
+D:\Users\CHIHHAOLAI\Documents\Visual Studio 2010\Projects\C_S_TEST\C_S_TEST\bin\Debug\OpenHardwareMonitorLib.dll
+D:\Users\CHIHHAOLAI\Documents\Visual Studio 2010\Projects\C_S_TEST\C_S_TEST\bin\Debug\CPU_Monitor.exe
+D:\Users\CHIHHAOLAI\Documents\Visual Studio 2010\Projects\C_S_TEST\C_S_TEST\bin\Debug\CPU_Monitor.pdb
+D:\Users\CHIHHAOLAI\Documents\Visual Studio 2010\Projects\C_S_TEST\C_S_TEST\obj\x86\Debug\CPU_Monitor.Properties.Resources.resources
+D:\Users\CHIHHAOLAI\Documents\Visual Studio 2010\Projects\C_S_TEST\C_S_TEST\obj\x86\Debug\CPU_Monitor.exe
+D:\Users\CHIHHAOLAI\Documents\Visual Studio 2010\Projects\C_S_TEST\C_S_TEST\obj\x86\Debug\CPU_Monitor.pdb
