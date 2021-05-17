@@ -15,10 +15,11 @@
    (1) HWiNFO_LCD_C#: C# 原始碼 (.net 4.0)  
    (2) HWiNFO_LCD.exe: 已Compile的執行檔  
    (3) 必須安裝 HWiNFO，官方網站: https://www.hwinfo.com/  
-   (4) 在 HWiNFO 選項中，勾選 Shared Memory Support  
-   (5) HWiNFO_LCD_Arduino: Arduino 原始碼  
-   (6) 硬體材料: Arduino Nano, LCD2004(I2C)  
-   (7) 3D列印外殼: https://www.thingiverse.com/thing:4171171  
+   (4) 在 HWiNFO Settings 中，勾選 Shared Memory Support  
+   (5) 在 HWiNFO Sensor Settings 中，勾選 Enable reporting Gadget  
+   (6) HWiNFO_LCD_Arduino: Arduino 原始碼  
+   (7) 硬體材料: Arduino Nano, LCD2004(I2C)  
+   (8) 3D列印外殼: https://www.thingiverse.com/thing:4171171  
 
 ![image](https://github.com/Chihhao/Arduino_Pc_Monitor/blob/master/image/IMG_2808.jpg)
   
@@ -31,4 +32,6 @@
 ![image](https://github.com/Chihhao/Arduino_Pc_Monitor/blob/master/image/HWiNFO_LCD_C%23.png)
   
 ![image](https://github.com/Chihhao/Arduino_Pc_Monitor/blob/master/image/HWiNFO64%20Settings.png)
+  
+![image](https://github.com/Chihhao/Arduino_Pc_Monitor/blob/master/HWiNFO_LCD_C%23/readme1.png)
   
