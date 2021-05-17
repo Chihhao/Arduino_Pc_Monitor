@@ -21,6 +21,8 @@
    (7) 硬體材料: Arduino Nano, LCD2004(I2C)  
    (8) 3D列印外殼: https://www.thingiverse.com/thing:4171171  
 
+![image](https://github.com/Chihhao/Arduino_Pc_Monitor/blob/master/image/i2c-lcd1602-pinout-arduino-nano.png)
+
 ![image](https://github.com/Chihhao/Arduino_Pc_Monitor/blob/master/image/IMG_2808.jpg)
   
 ![image](https://github.com/Chihhao/Arduino_Pc_Monitor/blob/master/image/3.png)
