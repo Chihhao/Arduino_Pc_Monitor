@@ -21,19 +21,11 @@
    (7) 硬體材料: Arduino Nano, LCD2004(I2C)  
    (8) 3D列印外殼: https://www.thingiverse.com/thing:4171171  
 
-![image](https://github.com/Chihhao/Arduino_Pc_Monitor/blob/master/image/i2c-lcd1602-pinout-arduino-nano.png)
-
-![image](https://github.com/Chihhao/Arduino_Pc_Monitor/blob/master/image/IMG_2808.jpg)
-  
+![image](https://github.com/Chihhao/Arduino_Pc_Monitor/blob/master/image/wiring.png)
+![image](https://github.com/Chihhao/Arduino_Pc_Monitor/blob/master/image/1.jpg)
+![image](https://github.com/Chihhao/Arduino_Pc_Monitor/blob/master/image/2.jpg)
 ![image](https://github.com/Chihhao/Arduino_Pc_Monitor/blob/master/image/3.png)
-  
-![image](https://github.com/Chihhao/Arduino_Pc_Monitor/blob/master/image/IMG_2825.jpg)
-  
-![image](https://github.com/Chihhao/Arduino_Pc_Monitor/blob/master/image/IMG_2819.jpg)
-  
-![image](https://github.com/Chihhao/Arduino_Pc_Monitor/blob/master/image/HWiNFO_LCD_C%23.png)
-  
-![image](https://github.com/Chihhao/Arduino_Pc_Monitor/blob/master/image/HWiNFO64%20Settings.png)
-  
-![image](https://github.com/Chihhao/Arduino_Pc_Monitor/blob/master/HWiNFO_LCD_C%23/readme1.png)
-  
+![image](https://github.com/Chihhao/Arduino_Pc_Monitor/blob/master/image/4.jpg)
+![image](https://github.com/Chihhao/Arduino_Pc_Monitor/blob/master/image/5.png)  
+![image](https://github.com/Chihhao/Arduino_Pc_Monitor/blob/master/image/HWiNFO64_Settings_1.png)  
+![image](https://github.com/Chihhao/Arduino_Pc_Monitor/blob/master/image/HWiNFO64_Settings_2.png)
