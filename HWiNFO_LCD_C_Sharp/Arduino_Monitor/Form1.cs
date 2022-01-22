@@ -91,7 +91,7 @@ namespace Arduino_Monitor{
         private void btn_Connect2_Click(object sender, EventArgs e) { //連線 HWiNFO
             try{
                 if (cb_COM.Text == "TEST"){
-                    timer2.Interval = 2000;
+                    timer2.Interval = 1000;
                     timer2.Enabled = true;
                     toolStripStatusLabel1.Text = "Connected(TEST)";
                     tb_preview.Text = "";
@@ -102,9 +102,9 @@ namespace Arduino_Monitor{
                 else if (!port.IsOpen){
                     port.PortName = cb_COM.Text;
                     port.Open();
-                    timer2.Interval = 2000;
+                    timer2.Interval = 1000;
                     timer2.Enabled = true;
-                    timer1.Interval = 2000;
+                    timer1.Interval = 1000;
                     timer1.Enabled = true;
                     toolStripStatusLabel1.Text = "Connected";
                     tb_preview.Text = "";
@@ -359,14 +359,24 @@ namespace Arduino_Monitor{
             if (port.IsOpen) { port.Write(sOutputStr + (char)(LCD_CHANGE_LINE)); }
         }
 
+        static bool bColon = true; //閃爍的冒號
         private void HAO(){
             float fTmp;
             int iTmp1, iTmp2, iTmp3, iTmp4, iTmp5;
             int strlen=0;
+            
 
             //LINE1
             DateTime now = DateTime.Now;
-            sOutputStr = now.ToString("ddd yyyy-MM-dd HH:mm", new CultureInfo("en-US"));
+            if (bColon == true) {
+                sOutputStr = now.ToString("ddd yyyy-MM-dd HH:mm", new CultureInfo("en-US"));
+                bColon = false;
+            }
+            else {
+                sOutputStr = now.ToString("ddd yyyy-MM-dd HH mm", new CultureInfo("en-US"));
+                bColon = true;
+            }
+            
             sendToPreviewScreen(sOutputStr.ToUpper());
             if (port.IsOpen) { port.Write(sOutputStr + (char)(LCD_CHANGE_LINE)); }
 

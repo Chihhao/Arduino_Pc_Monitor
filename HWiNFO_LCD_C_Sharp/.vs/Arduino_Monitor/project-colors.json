@@ -1,0 +1,11 @@
+{
+  "Version": 1,
+  "ProjectMap": {
+    "42b7948b-101b-4818-bd53-0cc4d8596477": {
+      "ProjectGuid": "42b7948b-101b-4818-bd53-0cc4d8596477",
+      "DisplayName": "Arduino_Monitor",
+      "ColorIndex": 0
+    }
+  },
+  "NextColorIndex": 1
+}

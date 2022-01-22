@@ -79,12 +79,13 @@
             // 
             // statusStrip1
             // 
+            this.statusStrip1.ImageScalingSize = new System.Drawing.Size(24, 24);
             this.statusStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.toolStripStatusLabel1});
-            this.statusStrip1.Location = new System.Drawing.Point(1, 288);
+            this.statusStrip1.Location = new System.Drawing.Point(1, 286);
             this.statusStrip1.Name = "statusStrip1";
             this.statusStrip1.Padding = new System.Windows.Forms.Padding(2, 0, 21, 0);
-            this.statusStrip1.Size = new System.Drawing.Size(464, 28);
+            this.statusStrip1.Size = new System.Drawing.Size(464, 30);
             this.statusStrip1.SizingGrip = false;
             this.statusStrip1.TabIndex = 6;
             this.statusStrip1.Text = "statusStrip1";
@@ -136,7 +137,7 @@
             this.label1.Name = "label1";
             this.label1.Size = new System.Drawing.Size(192, 30);
             this.label1.TabIndex = 8;
-            this.label1.Text = "ver: 2021/05/17";
+            this.label1.Text = "ver: 2022/01/22";
             // 
             // timer1
             // 

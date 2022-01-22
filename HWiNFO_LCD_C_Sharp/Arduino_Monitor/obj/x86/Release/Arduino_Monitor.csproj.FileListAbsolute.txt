@@ -42,3 +42,17 @@ C:\GitHub\Arduino_Pc_Monitor\HWiNFO_LCD_C#\Arduino_Monitor\obj\x86\Release\Ardui
 C:\GitHub\Arduino_Pc_Monitor\HWiNFO_LCD_C#\Arduino_Monitor\obj\x86\Release\HWiNFO_LCD.TrustInfo.xml
 C:\GitHub\Arduino_Pc_Monitor\HWiNFO_LCD_C#\Arduino_Monitor\obj\x86\Release\HWiNFO_LCD.exe.manifest
 C:\GitHub\Arduino_Pc_Monitor\HWiNFO_LCD_C#\Arduino_Monitor\obj\x86\Release\HWiNFO_LCD.application
+C:\GitHub\Arduino_Pc_Monitor\HWiNFO_LCD_C_Sharp\Arduino_Monitor\obj\x86\Release\Arduino_Monitor.Form1.resources
+C:\GitHub\Arduino_Pc_Monitor\HWiNFO_LCD_C_Sharp\Arduino_Monitor\obj\x86\Release\HWiNFO_LCD.Properties.Resources.resources
+C:\GitHub\Arduino_Pc_Monitor\HWiNFO_LCD_C_Sharp\Arduino_Monitor\obj\x86\Release\Arduino_Monitor.csproj.GenerateResource.cache
+C:\GitHub\Arduino_Pc_Monitor\HWiNFO_LCD_C_Sharp\Arduino_Monitor\obj\x86\Release\HWiNFO_LCD.exe
+C:\GitHub\Arduino_Pc_Monitor\HWiNFO_LCD_C_Sharp\Arduino_Monitor\obj\x86\Release\HWiNFO_LCD.pdb
+C:\GitHub\Arduino_Pc_Monitor\HWiNFO_LCD_C_Sharp\Arduino_Monitor\bin\Release\HWiNFO_LCD.exe.config
+C:\GitHub\Arduino_Pc_Monitor\HWiNFO_LCD_C_Sharp\Arduino_Monitor\bin\Release\HWiNFO_LCD.exe.manifest
+C:\GitHub\Arduino_Pc_Monitor\HWiNFO_LCD_C_Sharp\Arduino_Monitor\bin\Release\HWiNFO_LCD.application
+C:\GitHub\Arduino_Pc_Monitor\HWiNFO_LCD_C_Sharp\Arduino_Monitor\bin\Release\HWiNFO_LCD.exe
+C:\GitHub\Arduino_Pc_Monitor\HWiNFO_LCD_C_Sharp\Arduino_Monitor\obj\x86\Release\Arduino_Monitor.csproj.CoreCompileInputs.cache
+C:\GitHub\Arduino_Pc_Monitor\HWiNFO_LCD_C_Sharp\Arduino_Monitor\obj\x86\Release\HWiNFO_LCD.TrustInfo.xml
+C:\GitHub\Arduino_Pc_Monitor\HWiNFO_LCD_C_Sharp\Arduino_Monitor\obj\x86\Release\HWiNFO_LCD.exe.manifest
+C:\GitHub\Arduino_Pc_Monitor\HWiNFO_LCD_C_Sharp\Arduino_Monitor\obj\x86\Release\HWiNFO_LCD.application
+C:\GitHub\Arduino_Pc_Monitor\HWiNFO_LCD_C_Sharp\Arduino_Monitor\bin\Release\HWiNFO_LCD.pdb

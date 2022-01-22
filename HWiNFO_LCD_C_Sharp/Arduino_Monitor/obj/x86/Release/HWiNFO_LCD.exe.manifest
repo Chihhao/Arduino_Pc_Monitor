@@ -43,24 +43,24 @@
     </dependentAssembly>
   </dependency>
   <dependency>
-    <dependentAssembly dependencyType="install" allowDelayedBinding="true" codebase="HWiNFO_LCD.exe" size="46080">
+    <dependentAssembly dependencyType="install" allowDelayedBinding="true" codebase="HWiNFO_LCD.exe" size="45056">
       <assemblyIdentity name="HWiNFO_LCD" version="1.0.0.0" language="neutral" processorArchitecture="x86" />
       <hash>
         <dsig:Transforms>
           <dsig:Transform Algorithm="urn:schemas-microsoft-com:HashTransforms.Identity" />
         </dsig:Transforms>
-        <dsig:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1" />
-        <dsig:DigestValue>UcmirFyEMuAmUafOox74VkX7OEc=</dsig:DigestValue>
+        <dsig:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha256" />
+        <dsig:DigestValue>WNsziaTC8nSdeTAwScfTtghuQKqRWysQzHLictZ56LA=</dsig:DigestValue>
       </hash>
     </dependentAssembly>
   </dependency>
-  <file name="HWiNFO_LCD.exe.config" size="122">
+  <file name="HWiNFO_LCD.exe.config" size="208">
     <hash>
       <dsig:Transforms>
         <dsig:Transform Algorithm="urn:schemas-microsoft-com:HashTransforms.Identity" />
       </dsig:Transforms>
-      <dsig:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1" />
-      <dsig:DigestValue>9KA+JzlusaPz4TXe3oyukw98w6U=</dsig:DigestValue>
+      <dsig:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha256" />
+      <dsig:DigestValue>muh0ZIIAKQbFwTv/oDR4hn4lAIBlXLGNLAySD6ROY5Y=</dsig:DigestValue>
     </hash>
   </file>
   <file name="info1.ico" size="7358">
@@ -68,8 +68,8 @@
       <dsig:Transforms>
         <dsig:Transform Algorithm="urn:schemas-microsoft-com:HashTransforms.Identity" />
       </dsig:Transforms>
-      <dsig:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1" />
-      <dsig:DigestValue>FAo8D7NxWDsR+um3qw/VkNt3Ycs=</dsig:DigestValue>
+      <dsig:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha256" />
+      <dsig:DigestValue>lLFoSYZIKod/WjaxipcI6vWZBLNE6WdEdiNcFhW734U=</dsig:DigestValue>
     </hash>
   </file>
   <compatibility xmlns="urn:schemas-microsoft-com:compatibility.v1">
