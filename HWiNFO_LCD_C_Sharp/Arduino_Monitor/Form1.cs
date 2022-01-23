@@ -382,8 +382,8 @@ namespace Arduino_Monitor{
 
             //LINE2
             sOutputStr = "Cpu ";
-            iTmp1 = (int)(data_arr.Find(d => d.szLabelOrig == "Total CPU Usage").ValueAvg);
-            iTmp2 = (int)(data_arr.Find(d => d.szLabelOrig == "CPU Package").ValueAvg);
+            iTmp1 = (int)(data_arr.Find(d => d.szLabelOrig == "Total CPU Usage").Value);
+            iTmp2 = (int)(data_arr.Find(d => d.szLabelOrig == "CPU Package").Value);
             if (iTmp1 > 99) iTmp1 = 99;
             for (int i = 0; i < iTmp1 / 10; i++) sOutputStr += (char)(LCD_BAR5);
             if (iTmp1 % 10 >= 9) sOutputStr += (char)(LCD_BAR5);
@@ -399,8 +399,8 @@ namespace Arduino_Monitor{
 
             //LINE3
             sOutputStr = "Ram ";
-            iTmp1 = (int)(data_arr.Find(d => d.szLabelOrig == "Physical Memory Load").ValueAvg);
-            fTmp = (float)(data_arr.Find(d => d.szLabelOrig == "Physical Memory Used").ValueAvg);
+            iTmp1 = (int)(data_arr.Find(d => d.szLabelOrig == "Physical Memory Load").Value);
+            fTmp = (float)(data_arr.Find(d => d.szLabelOrig == "Physical Memory Used").Value);
             if (iTmp1 > 99) iTmp1 = 99;
             for (int i = 0; i < iTmp1 / 10; i++) sOutputStr += (char)(LCD_BAR5);
             if (iTmp1 % 10 >= 9) sOutputStr += (char)(LCD_BAR5);
@@ -416,8 +416,8 @@ namespace Arduino_Monitor{
 
             //LINE4
             sOutputStr = "Gpu ";
-            iTmp1 = (int)(data_arr.Find(d => d.szLabelOrig == "GPU Core Load").ValueAvg);
-            iTmp2 = (int)(data_arr.Find(d => d.szLabelOrig == "GPU Temperature").ValueAvg);
+            iTmp1 = (int)(data_arr.Find(d => d.szLabelOrig == "GPU Core Load").Value);
+            iTmp2 = (int)(data_arr.Find(d => d.szLabelOrig == "GPU Temperature").Value);
             if (iTmp1 > 99) iTmp1 = 99;
             for (int i = 0; i < iTmp1 / 10; i++) sOutputStr += (char)(LCD_BAR5);
             if (iTmp1 % 10 >= 9) sOutputStr += (char)(LCD_BAR5);
