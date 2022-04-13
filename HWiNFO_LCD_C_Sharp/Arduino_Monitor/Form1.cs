@@ -2,18 +2,16 @@
 using System.Windows.Forms;
 using System.IO.Ports;
 using System.Globalization;
-
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO.MemoryMappedFiles;
 using System.Runtime.InteropServices;
-using System.ServiceProcess;
-using System.Text;
 using System.Text.RegularExpressions;
-using System.Timers;
 
 namespace Arduino_Monitor{
     public partial class Form1 : Form{
+        const string VERSION = "ver: 2022/4/12b";
+        const int LCD_SET_TO_LEFT_TOP = 22;
 
         const int LCD_BAR1 = 23;
         const int LCD_BAR2 = 24;
@@ -34,9 +32,9 @@ namespace Arduino_Monitor{
         static HWiNFO_SHARED_MEM HWiNFOMemory;
         static List<HWiNFO_ELEMENT> data_arr; 
 
-        string sOutputStr;
+        
 
-        private SerialPort port = new SerialPort();
+        private readonly SerialPort port = new SerialPort();
         public Form1(){
             InitializeComponent();
             Init();
@@ -45,6 +43,7 @@ namespace Arduino_Monitor{
         }
 
         private void Init(){
+            label_ver.Text = VERSION;
             try
             {
                 notifyIcon1.Visible = false;
@@ -68,7 +67,7 @@ namespace Arduino_Monitor{
             }
         }
 
-        private void btn_DisConnect_Click(object sender, EventArgs e){ //離線按鈕
+        private void Btn_DisConnect_Click(object sender, EventArgs e){ //離線按鈕
             toolStripStatusLabel1.Text = "Disconnected";
             tb_preview.Text = "";
             timer2.Enabled = false;
@@ -86,9 +85,8 @@ namespace Arduino_Monitor{
                 MessageBox.Show(ex.Message);
             }
         }
-
-        
-        private void btn_Connect2_Click(object sender, EventArgs e) { //連線 HWiNFO
+                
+        private void Btn_Connect2_Click(object sender, EventArgs e) { //連線 HWiNFO
             try{
                 if (cb_COM.Text == "TEST"){
                     timer2.Interval = 1000;
@@ -126,9 +124,9 @@ namespace Arduino_Monitor{
                 notifyIcon1.Visible = true;
                 try
                 {
-                    notifyIcon1.ShowBalloonTip(500, "HWiNFO_LCD", toolStripStatusLabel1.Text, ToolTipIcon.Info);
+                    //notifyIcon1.ShowBalloonTip(500, "HWiNFO_LCD", toolStripStatusLabel1.Text, ToolTipIcon.Info);
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
 
                 }
@@ -136,7 +134,7 @@ namespace Arduino_Monitor{
             }
         }
         
-        private void notifyIcon1_DoubleClick(object sender, EventArgs e){            
+        private void NotifyIcon1_DoubleClick(object sender, EventArgs e){            
             this.Show();
             this.WindowState = FormWindowState.Normal;
             notifyIcon1.Visible = false;
@@ -200,7 +198,7 @@ namespace Arduino_Monitor{
             } 
         }
         
-        private void timer2_Tick(object sender, EventArgs e){
+        private void Timer2_Tick(object sender, EventArgs e){
             if (!port.IsOpen && cb_COM.Text != "TEST"){
                 port.PortName = cb_COM.Text;
                 port.Open();
@@ -219,7 +217,7 @@ namespace Arduino_Monitor{
                 return;
             }
             
-            if (!readMemory()){
+            if (!ReadMemory()){
                 toolStripStatusLabel1.Text = "HWiFNO Sensor Error!";
                 tb_preview.Text = "HWiFNO Sensor Error!";
                 if (port.IsOpen){
@@ -236,8 +234,8 @@ namespace Arduino_Monitor{
                     //LIU();
                     HAO();
                 }
-                catch (Exception ex){
-                    sendToPreviewScreen("serial error");
+                catch (Exception){
+                    SendToPreviewScreen("serial error");
                     //eventLog.WriteEntry("Sending data to serial fail: " + ex.Message, EventLogEntryType.Error);
                     //port_opened = false;
                 }
@@ -254,7 +252,7 @@ namespace Arduino_Monitor{
             return false;
         }
 
-        private static bool readMemory(){
+        private static bool ReadMemory(){
             try{
                 mmf = MemoryMappedFile.OpenExisting(HWiNFO_SHARED_MEM_FILE_NAME, MemoryMappedFileRights.Read);
                 accessor = mmf.CreateViewAccessor(0L, (long)Marshal.SizeOf(typeof(HWiNFO_SHARED_MEM)), MemoryMappedFileAccess.Read);
@@ -274,7 +272,7 @@ namespace Arduino_Monitor{
                 }
                 return true;
             }
-            catch (Exception ex){
+            catch (Exception){
                 //eventLog.WriteEntry("An error occured while opening the HWiNFO shared memory: " + ex.Message, EventLogEntryType.Error);
                 return false;
             }
@@ -285,7 +283,7 @@ namespace Arduino_Monitor{
         string sPreviewStr2 = "";
         string sPreviewStr3 = "";
         string sPreviewStr4 = "";
-        private void sendToPreviewScreen(string inStr){
+        private void SendToPreviewScreen(string inStr){
             inStr = inStr.Replace((char)LCD_BAR1, '2');
             inStr = inStr.Replace((char)LCD_BAR2, '4');
             inStr = inStr.Replace((char)LCD_BAR3, '6');
@@ -302,83 +300,89 @@ namespace Arduino_Monitor{
                               sPreviewStr3 + "\n" + sPreviewStr4;
         }
 
-        private void LIU(){
-            float fTmp;
-            int iTmp1, iTmp2, iTmp3, iTmp4, iTmp5;
+        //private void LIU(){
+        //    float fTmp;
+        //    int iTmp1, iTmp2;
+        //    int iTmp3, iTmp4;
+        //    string sOutputStr;
 
-            //LINE1
-            //Cpu|0000@1.000V|55'c
-            //Cpu| Clocks@Voltage(SVI2 TFN)|CPU(Tctl/Tdie)
-            iTmp1 = (int)(data_arr.Find(d => d.szLabelOrig == "Core 0 Clock (perf #1/4)").Value);
-            fTmp = (float)(data_arr.Find(d => d.szLabelOrig == "CPU Core Voltage (SVI2 TFN)").Value);
-            iTmp2 = (int)(data_arr.Find(d => d.szLabelOrig == "CPU (Tctl/Tdie)").Value);
-            sOutputStr = String.Format("Cpu|{0,4}@{1:0.000}V|{2,2}'c", iTmp1, fTmp, iTmp2);
-            sendToPreviewScreen(sOutputStr);
-            if (port.IsOpen) { port.Write(sOutputStr + (char)(LCD_CHANGE_LINE)); }
+        //    //LINE1
+        //    //Cpu|0000@1.000V|55'c
+        //    //Cpu| Clocks@Voltage(SVI2 TFN)|CPU(Tctl/Tdie)
+        //    iTmp1 = (int)(data_arr.Find(d => d.szLabelOrig == "Core 0 Clock (perf #1/4)").Value);
+        //    fTmp = (float)(data_arr.Find(d => d.szLabelOrig == "CPU Core Voltage (SVI2 TFN)").Value);
+        //    iTmp2 = (int)(data_arr.Find(d => d.szLabelOrig == "CPU (Tctl/Tdie)").Value);
+        //    sOutputStr = String.Format("Cpu|{0,4}@{1:0.000}V|{2,2}'c", iTmp1, fTmp, iTmp2);
+        //    SendToPreviewScreen(sOutputStr);
+        //    if (port.IsOpen) { port.Write(sOutputStr + (char)(LCD_CHANGE_LINE)); }
 
-            //LINE2
-            //Ram|3200@14-14-14-28
-            //Ram| Memory Clock*2@Tcas-Trcd-Trp-Tras
-            /*
-            iTmp1 = (int)(data_arr.Find(d => d.szLabelOrig == "Memory Clock").Value)*2;                    
-            iTmp2 = (int)(data_arr.Find(d => d.szLabelOrig == "Tcas").Value);
-            iTmp3 = (int)(data_arr.Find(d => d.szLabelOrig == "Trcd").Value);
-            iTmp4 = (int)(data_arr.Find(d => d.szLabelOrig == "Trp").Value);
-            iTmp5 = (int)(data_arr.Find(d => d.szLabelOrig == "Tras").Value);
-            sOutputStr = String.Format("Ram|{0,4}@{1,2}-{2,2}-{3,2}-{4,2}", iTmp1, iTmp2, iTmp3, iTmp4, iTmp5);
-            */
+        //    //LINE2
+        //    //Ram|3200@14-14-14-28
+        //    //Ram| Memory Clock*2@Tcas-Trcd-Trp-Tras
+        //    /*
+        //    iTmp1 = (int)(data_arr.Find(d => d.szLabelOrig == "Memory Clock").Value)*2;                    
+        //    iTmp2 = (int)(data_arr.Find(d => d.szLabelOrig == "Tcas").Value);
+        //    iTmp3 = (int)(data_arr.Find(d => d.szLabelOrig == "Trcd").Value);
+        //    iTmp4 = (int)(data_arr.Find(d => d.szLabelOrig == "Trp").Value);
+        //    iTmp5 = (int)(data_arr.Find(d => d.szLabelOrig == "Tras").Value);
+        //    sOutputStr = String.Format("Ram|{0,4}@{1,2}-{2,2}-{3,2}-{4,2}", iTmp1, iTmp2, iTmp3, iTmp4, iTmp5);
+        //    */
 
-            //Ram|3200@1.000V|55'c
-            //Ram|Memory Clock*2@DRAM|DIMM[2] Temperature+DIMM[3] Temperature平均
-            iTmp1 = (int)(data_arr.Find(d => d.szLabelOrig == "Memory Clock").Value) * 2;
-            fTmp = (float)(data_arr.Find(d => d.szLabelOrig == "DRAM").Value);
-            iTmp2 = (int)(data_arr.Find(d => d.szLabelOrig == "DIMM[2] Temperature").Value);
-            iTmp3 = (int)(data_arr.Find(d => d.szLabelOrig == "DIMM[3] Temperature").Value);
-            iTmp4 = (iTmp2 + iTmp3) / 2;
-            sOutputStr = String.Format("Ram|{0,4}@{1:0.000}V|{2,2}'c", iTmp1, fTmp, iTmp4);
-            sendToPreviewScreen(sOutputStr);
-            if (port.IsOpen) { port.Write(sOutputStr + (char)(LCD_CHANGE_LINE)); }
+        //    //Ram|3200@1.000V|55'c
+        //    //Ram|Memory Clock*2@DRAM|DIMM[2] Temperature+DIMM[3] Temperature平均
+        //    iTmp1 = (int)(data_arr.Find(d => d.szLabelOrig == "Memory Clock").Value) * 2;
+        //    fTmp = (float)(data_arr.Find(d => d.szLabelOrig == "DRAM").Value);
+        //    iTmp2 = (int)(data_arr.Find(d => d.szLabelOrig == "DIMM[2] Temperature").Value);
+        //    iTmp3 = (int)(data_arr.Find(d => d.szLabelOrig == "DIMM[3] Temperature").Value);
+        //    iTmp4 = (iTmp2 + iTmp3) / 2;
+        //    sOutputStr = String.Format("Ram|{0,4}@{1:0.000}V|{2,2}'c", iTmp1, fTmp, iTmp4);
+        //    SendToPreviewScreen(sOutputStr);
+        //    if (port.IsOpen) { port.Write(sOutputStr + (char)(LCD_CHANGE_LINE)); }
 
-            //LINE3
-            //Gpu|0000/0000  |35'c
-            //Gpu| GPU Core Clock/GPU Memory Clock  |GPU Temp
-            iTmp1 = (int)(data_arr.Find(d => d.szLabelOrig == "GPU Clock").Value);
-            iTmp2 = (int)(data_arr.Find(d => d.szLabelOrig == "GPU Memory Clock").Value);
-            iTmp3 = (int)(data_arr.Find(d => d.szLabelOrig == "GPU Temperature").Value);
-            sOutputStr = String.Format("Gpu|{0,4}/{1,4}  |{2,2}'c", iTmp1, iTmp2, iTmp3);
-            sendToPreviewScreen(sOutputStr);
-            if (port.IsOpen) { port.Write(sOutputStr + (char)(LCD_CHANGE_LINE)); }
+        //    //LINE3
+        //    //Gpu|0000/0000  |35'c
+        //    //Gpu| GPU Core Clock/GPU Memory Clock  |GPU Temp
+        //    iTmp1 = (int)(data_arr.Find(d => d.szLabelOrig == "GPU Clock").Value);
+        //    iTmp2 = (int)(data_arr.Find(d => d.szLabelOrig == "GPU Memory Clock").Value);
+        //    iTmp3 = (int)(data_arr.Find(d => d.szLabelOrig == "GPU Temperature").Value);
+        //    sOutputStr = String.Format("Gpu|{0,4}/{1,4}  |{2,2}'c", iTmp1, iTmp2, iTmp3);
+        //    SendToPreviewScreen(sOutputStr);
+        //    if (port.IsOpen) { port.Write(sOutputStr + (char)(LCD_CHANGE_LINE)); }
 
-            //LINE4
-            //Fan|0000   PUMP|0000
-            //Fan| CPU1   PUMP|CPU2
-            iTmp1 = (int)(data_arr.Find(d => d.szLabelOrig == "CPU1" && d.szUnit == "RPM").Value);
-            iTmp2 = (int)(data_arr.Find(d => d.szLabelOrig == "CPU2" && d.szUnit == "RPM").Value);
-            sOutputStr = String.Format("Fan|{0,4}   Pump|{1,4}", iTmp1, iTmp2);
-            sendToPreviewScreen(sOutputStr);
-            if (port.IsOpen) { port.Write(sOutputStr + (char)(LCD_CHANGE_LINE)); }
-        }
+        //    //LINE4
+        //    //Fan|0000   PUMP|0000
+        //    //Fan| CPU1   PUMP|CPU2
+        //    iTmp1 = (int)(data_arr.Find(d => d.szLabelOrig == "CPU1" && d.szUnit == "RPM").Value);
+        //    iTmp2 = (int)(data_arr.Find(d => d.szLabelOrig == "CPU2" && d.szUnit == "RPM").Value);
+        //    sOutputStr = String.Format("Fan|{0,4}   Pump|{1,4}", iTmp1, iTmp2);
+        //    SendToPreviewScreen(sOutputStr);
+        //    if (port.IsOpen) { port.Write(sOutputStr + (char)(LCD_CHANGE_LINE)); }
+        //}
 
         static bool bColon = true; //閃爍的冒號
         private void HAO(){
             float fTmp;
-            int iTmp1, iTmp2, iTmp3, iTmp4, iTmp5;
+            int iTmp1, iTmp2;
             int strlen=0;
-            
+            string sOutputStr;
+            string sLcdStringFourLine = "";
+
+            if (port.IsOpen) { port.Write((char)LCD_SET_TO_LEFT_TOP + ""); }
 
             //LINE1
             DateTime now = DateTime.Now;
             if (bColon == true) {
-                sOutputStr = now.ToString("ddd yyyy-MM-dd HH:mm", new CultureInfo("en-US"));
+                sOutputStr = now.ToString("ddd yyyy-MM-dd HH:mm", new CultureInfo("en-US")).ToUpper();
                 bColon = false;
             }
             else {
-                sOutputStr = now.ToString("ddd yyyy-MM-dd HH mm", new CultureInfo("en-US"));
+                sOutputStr = now.ToString("ddd yyyy-MM-dd HH mm", new CultureInfo("en-US")).ToUpper();
                 bColon = true;
             }
             
-            sendToPreviewScreen(sOutputStr.ToUpper());
-            if (port.IsOpen) { port.Write(sOutputStr + (char)(LCD_CHANGE_LINE)); }
+            SendToPreviewScreen(sOutputStr);
+            sLcdStringFourLine += sOutputStr + (char)(LCD_CHANGE_LINE);
+            // if (port.IsOpen) { port.Write(sOutputStr + (char)(LCD_CHANGE_LINE)); }
 
             //LINE2
             sOutputStr = "Cpu ";
@@ -394,8 +398,10 @@ namespace Arduino_Monitor{
             strlen=sOutputStr.Length;
             for (int i = 0; i < 14 - strlen; i++) sOutputStr += " ";
             sOutputStr += String.Format("| {0,2}'c", iTmp2);
-            sendToPreviewScreen(sOutputStr);
-            if (port.IsOpen) { port.Write(sOutputStr + (char)(LCD_CHANGE_LINE)); }
+
+            SendToPreviewScreen(sOutputStr);
+            sLcdStringFourLine += sOutputStr + (char)(LCD_CHANGE_LINE);
+            // if (port.IsOpen) { port.Write(sOutputStr + (char)(LCD_CHANGE_LINE)); }
 
             //LINE3
             sOutputStr = "Ram ";
@@ -411,8 +417,10 @@ namespace Arduino_Monitor{
             strlen = sOutputStr.Length;
             for (int i = 0; i < 14 - strlen; i++) sOutputStr += " ";
             sOutputStr += String.Format("|{0,4:0.0}G", fTmp/1024);
-            sendToPreviewScreen(sOutputStr);
-            if (port.IsOpen) { port.Write(sOutputStr + (char)(LCD_CHANGE_LINE)); }
+
+            SendToPreviewScreen(sOutputStr);
+            sLcdStringFourLine += sOutputStr + (char)(LCD_CHANGE_LINE);
+            // if (port.IsOpen) { port.Write(sOutputStr + (char)(LCD_CHANGE_LINE)); }
 
             //LINE4
             sOutputStr = "Gpu ";
@@ -428,30 +436,33 @@ namespace Arduino_Monitor{
             strlen = sOutputStr.Length;
             for (int i = 0; i < 14 - strlen; i++) sOutputStr += " ";
             sOutputStr += String.Format("| {0,2}'c", iTmp2);
-            sendToPreviewScreen(sOutputStr);
-            if (port.IsOpen) { port.Write(sOutputStr + (char)(LCD_CHANGE_LINE)); }
-        
+
+            SendToPreviewScreen(sOutputStr);
+            sLcdStringFourLine += sOutputStr+ (char)(LCD_CHANGE_LINE);
+            // if (port.IsOpen) { port.Write(sOutputStr + (char)(LCD_CHANGE_LINE)); }
+
+            if (port.IsOpen) { port.Write(sLcdStringFourLine); }
         }
 
-        private void timer1_Tick(object sender, EventArgs e){
+        private void Timer1_Tick(object sender, EventArgs e){
             if (cb_COM.Text == "") { return; }
             if (checkBox1.Checked == false) { return; }
 
             DateTime now = DateTime.Now;
             if (now.DayOfWeek == DayOfWeek.Sunday || now.DayOfWeek == DayOfWeek.Saturday) {
                 if (btn_Connect_2.Enabled == true) { 
-                    btn_Connect2_Click(sender, e); 
+                    Btn_Connect2_Click(sender, e); 
                 }
             }
             else{
                 if (now.Hour >= 0 && now.Hour < 18){ //不使用電腦的時間
                     if (btn_DisConnect.Enabled == true){
-                        btn_DisConnect_Click(sender, e);                    
+                        Btn_DisConnect_Click(sender, e);                    
                     }
                 }
                 else{
                     if (btn_Connect_2.Enabled == true){
-                        btn_Connect2_Click(sender, e);
+                        Btn_Connect2_Click(sender, e);
                     }
                 }         
             }

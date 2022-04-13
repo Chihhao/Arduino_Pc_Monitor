@@ -43,24 +43,24 @@
     </dependentAssembly>
   </dependency>
   <dependency>
-    <dependentAssembly dependencyType="install" allowDelayedBinding="true" codebase="HWiNFO_LCD.exe" size="45056">
+    <dependentAssembly dependencyType="install" allowDelayedBinding="true" codebase="HWiNFO_LCD.exe" size="42496">
       <assemblyIdentity name="HWiNFO_LCD" version="1.0.0.0" language="neutral" processorArchitecture="x86" />
       <hash>
         <dsig:Transforms>
           <dsig:Transform Algorithm="urn:schemas-microsoft-com:HashTransforms.Identity" />
         </dsig:Transforms>
         <dsig:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha256" />
-        <dsig:DigestValue>6zgVtXKMUnNTjGCftimBQ2Npsx7vfMFaANfvI9V565A=</dsig:DigestValue>
+        <dsig:DigestValue>O6csPuTHF9zNkTe9OIy+yNfxGnXg/DCcGOgoiV3WXCE=</dsig:DigestValue>
       </hash>
     </dependentAssembly>
   </dependency>
-  <file name="HWiNFO_LCD.exe.config" size="208">
+  <file name="HWiNFO_LCD.exe.config" size="206">
     <hash>
       <dsig:Transforms>
         <dsig:Transform Algorithm="urn:schemas-microsoft-com:HashTransforms.Identity" />
       </dsig:Transforms>
       <dsig:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha256" />
-      <dsig:DigestValue>muh0ZIIAKQbFwTv/oDR4hn4lAIBlXLGNLAySD6ROY5Y=</dsig:DigestValue>
+      <dsig:DigestValue>sLK9APMXkjvcU5J/2DXwhfbapwmAEyg01NOoYvH2LAo=</dsig:DigestValue>
     </hash>
   </file>
   <file name="info1.ico" size="7358">

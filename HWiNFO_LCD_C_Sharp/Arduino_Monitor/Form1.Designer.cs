@@ -38,7 +38,7 @@
             this.btn_Connect_2 = new System.Windows.Forms.Button();
             this.timer2 = new System.Windows.Forms.Timer(this.components);
             this.tb_preview = new System.Windows.Forms.TextBox();
-            this.label1 = new System.Windows.Forms.Label();
+            this.label_ver = new System.Windows.Forms.Label();
             this.timer1 = new System.Windows.Forms.Timer(this.components);
             this.checkBox1 = new System.Windows.Forms.CheckBox();
             this.statusStrip1.SuspendLayout();
@@ -55,14 +55,14 @@
             this.btn_DisConnect.TabIndex = 2;
             this.btn_DisConnect.Text = "OFF";
             this.btn_DisConnect.UseVisualStyleBackColor = true;
-            this.btn_DisConnect.Click += new System.EventHandler(this.btn_DisConnect_Click);
+            this.btn_DisConnect.Click += new System.EventHandler(this.Btn_DisConnect_Click);
             // 
             // notifyIcon1
             // 
             this.notifyIcon1.Icon = ((System.Drawing.Icon)(resources.GetObject("notifyIcon1.Icon")));
             this.notifyIcon1.Text = "HWiNFO_LCD";
             this.notifyIcon1.Visible = true;
-            this.notifyIcon1.DoubleClick += new System.EventHandler(this.notifyIcon1_DoubleClick);
+            this.notifyIcon1.DoubleClick += new System.EventHandler(this.NotifyIcon1_DoubleClick);
             // 
             // cb_COM
             // 
@@ -107,11 +107,11 @@
             this.btn_Connect_2.TabIndex = 1;
             this.btn_Connect_2.Text = "ON (HWiNFO)";
             this.btn_Connect_2.UseVisualStyleBackColor = true;
-            this.btn_Connect_2.Click += new System.EventHandler(this.btn_Connect2_Click);
+            this.btn_Connect_2.Click += new System.EventHandler(this.Btn_Connect2_Click);
             // 
             // timer2
             // 
-            this.timer2.Tick += new System.EventHandler(this.timer2_Tick);
+            this.timer2.Tick += new System.EventHandler(this.Timer2_Tick);
             // 
             // tb_preview
             // 
@@ -128,21 +128,21 @@
             this.tb_preview.TabStop = false;
             this.tb_preview.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
             // 
-            // label1
+            // label_ver
             // 
-            this.label1.AutoSize = true;
-            this.label1.Font = new System.Drawing.Font("微軟正黑體", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(136)));
-            this.label1.ForeColor = System.Drawing.Color.Gray;
-            this.label1.Location = new System.Drawing.Point(257, 246);
-            this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(192, 30);
-            this.label1.TabIndex = 8;
-            this.label1.Text = "ver: 2022/01/22";
+            this.label_ver.Font = new System.Drawing.Font("微軟正黑體", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(136)));
+            this.label_ver.ForeColor = System.Drawing.Color.Gray;
+            this.label_ver.Location = new System.Drawing.Point(217, 243);
+            this.label_ver.Name = "label_ver";
+            this.label_ver.Size = new System.Drawing.Size(232, 30);
+            this.label_ver.TabIndex = 8;
+            this.label_ver.Text = "ver: xxxx/xx/xx";
+            this.label_ver.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
             // 
             // timer1
             // 
             this.timer1.Interval = 1000;
-            this.timer1.Tick += new System.EventHandler(this.timer1_Tick);
+            this.timer1.Tick += new System.EventHandler(this.Timer1_Tick);
             // 
             // checkBox1
             // 
@@ -162,7 +162,7 @@
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(466, 317);
             this.Controls.Add(this.checkBox1);
-            this.Controls.Add(this.label1);
+            this.Controls.Add(this.label_ver);
             this.Controls.Add(this.tb_preview);
             this.Controls.Add(this.btn_Connect_2);
             this.Controls.Add(this.statusStrip1);
@@ -197,7 +197,7 @@
         private System.Windows.Forms.Button btn_Connect_2;
         private System.Windows.Forms.Timer timer2;
         private System.Windows.Forms.TextBox tb_preview;
-        private System.Windows.Forms.Label label1;
+        private System.Windows.Forms.Label label_ver;
         private System.Windows.Forms.Timer timer1;
         private System.Windows.Forms.CheckBox checkBox1;
     }

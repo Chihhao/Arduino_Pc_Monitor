@@ -9,7 +9,7 @@ LiquidCrystal_I2C lcd(0x27, MAX_COL, MAX_ROW);
 int inByte = 0;         // incoming serial byte
 int inLine = 0;
 bool Flag_Ready = false;
-char ver[20]= "2021/05/17";
+char ver[20]= "2022/04/12";
 
 byte myChar1[8] = {B00000, B10000, B10000, B10000, B10000, B10000, B00000};
 byte myChar2[8] = {B00000, B11000, B11000, B11000, B11000, B11000, B00000};
@@ -50,6 +50,7 @@ void loop(){
     delay(1);
     if(inByte=='\n'){ ChangeLine();}
     else if(inByte=='\''){ lcd.print(char(223));}
+    else if(inByte==22){ SetCursorLeftTop();}
     else if(inByte==23){ lcd.write(byte(0));}
     else if(inByte==24){ lcd.write(byte(1));}
     else if(inByte==25){ lcd.write(byte(2));}
@@ -66,6 +67,11 @@ void loop(){
 void ChangeLine(){
   inLine++;
   if(inLine >= MAX_ROW) inLine=0;
+  lcd.setCursor(0, inLine);
+}
+
+void SetCursorLeftTop(){
+  inLine=0;
   lcd.setCursor(0, inLine);
 }
 

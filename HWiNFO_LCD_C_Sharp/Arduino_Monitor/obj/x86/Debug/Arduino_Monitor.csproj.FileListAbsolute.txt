@@ -25,3 +25,5 @@ C:\GitHub\Arduino_Pc_Monitor\HWiNFO_LCD_C_Sharp\Arduino_Monitor\obj\x86\Debug\HW
 C:\GitHub\Arduino_Pc_Monitor\HWiNFO_LCD_C_Sharp\Arduino_Monitor\obj\x86\Debug\HWiNFO_LCD.application
 C:\GitHub\Arduino_Pc_Monitor\HWiNFO_LCD_C_Sharp\Arduino_Monitor\obj\x86\Debug\HWiNFO_LCD.exe
 C:\GitHub\Arduino_Pc_Monitor\HWiNFO_LCD_C_Sharp\Arduino_Monitor\obj\x86\Debug\HWiNFO_LCD.pdb
+C:\GitHub\Arduino_Pc_Monitor\HWiNFO_LCD_C_Sharp\Arduino_Monitor\obj\x86\Debug\Arduino_Monitor.csproj.AssemblyReference.cache
+C:\GitHub\Arduino_Pc_Monitor\HWiNFO_LCD_C_Sharp\Arduino_Monitor\obj\x86\Debug\Arduino_Monitor.csproj.SuggestedBindingRedirects.cache
