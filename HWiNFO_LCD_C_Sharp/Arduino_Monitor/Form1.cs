@@ -7,12 +7,15 @@ using System.Diagnostics;
 using System.IO.MemoryMappedFiles;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
+using System.IO;
 
 namespace Arduino_Monitor{
     public partial class Form1 : Form{
-        const string VERSION = "ver: 2022/4/12b";
-        const int LCD_SET_TO_LEFT_TOP = 22;
+        const string VERSION = "ver: 2023/1/8b";
 
+        const string LOG_PATH = "HWiNFO_LCD.log";
+
+        const int LCD_SET_TO_LEFT_TOP = 22;
         const int LCD_BAR1 = 23;
         const int LCD_BAR2 = 24;
         const int LCD_BAR3 = 25;
@@ -31,9 +34,7 @@ namespace Arduino_Monitor{
         static MemoryMappedViewAccessor accessor;
         static HWiNFO_SHARED_MEM HWiNFOMemory;
         static List<HWiNFO_ELEMENT> data_arr; 
-
         
-
         private readonly SerialPort port = new SerialPort();
         public Form1(){
             InitializeComponent();
@@ -61,8 +62,8 @@ namespace Arduino_Monitor{
                 port.BaudRate = 9600;
 
             }
-            catch (Exception ex)
-            {
+            catch (Exception ex){
+                Log(ex.ToString());
                 MessageBox.Show(ex.Message);
             }
         }
@@ -82,6 +83,7 @@ namespace Arduino_Monitor{
                 cb_COM.Enabled = true;
             }
             catch (Exception ex){
+                Log(ex.ToString());
                 MessageBox.Show(ex.Message);
             }
         }
@@ -114,6 +116,7 @@ namespace Arduino_Monitor{
                 }
             }
             catch (Exception ex){
+                Log(ex.ToString());
                 MessageBox.Show(ex.Message);
             }
         }
@@ -145,8 +148,7 @@ namespace Arduino_Monitor{
         }
 
         [StructLayout(LayoutKind.Sequential, Pack = 1)]
-        public struct HWiNFO_SHARED_MEM
-        {
+        public struct HWiNFO_SHARED_MEM{
             public uint dwSignature;
             public uint dwVersion;
             public uint dwRevision;
@@ -160,8 +162,7 @@ namespace Arduino_Monitor{
         }
 
         [StructLayout(LayoutKind.Sequential, Pack = 1)]
-        public struct HWiNFO_ELEMENT
-        {
+        public struct HWiNFO_ELEMENT{
             public SENSOR_READING_TYPE tReading;
             public uint dwSensorIndex;
             public uint dwReadingID;
@@ -177,8 +178,7 @@ namespace Arduino_Monitor{
             public double ValueAvg;
         }
 
-        public enum SENSOR_READING_TYPE
-        {
+        public enum SENSOR_READING_TYPE{
             SENSOR_TYPE_NONE,
             SENSOR_TYPE_TEMP,
             SENSOR_TYPE_VOLT,
@@ -191,55 +191,77 @@ namespace Arduino_Monitor{
         }
 
         private void Form1_FormClosed(object sender, FormClosedEventArgs e){
-            if (port.IsOpen){
-                port.Write((char)(LCD_CLEAR) + "");
-                port.Write((char)(LCD_CLOSE_BACK_LIGHT) + "");
-                port.Close();
-            } 
+            try {
+                if (port.IsOpen) {
+                    port.Write((char)(LCD_CLEAR) + "");
+                    port.Write((char)(LCD_CLOSE_BACK_LIGHT) + "");
+                    port.Close();
+                }
+            }
+            catch (Exception ex) {
+                Log(ex.ToString());
+            }            
         }
         
         private void Timer2_Tick(object sender, EventArgs e){
-            if (!port.IsOpen && cb_COM.Text != "TEST"){
-                port.PortName = cb_COM.Text;
-                port.Open();
-                return;
-            }
-
-            if (!HWiNFOisStarted()){
-                toolStripStatusLabel1.Text = "HWiFNO App Error!";
-                tb_preview.Text = "HWiFNO App Error!";
-                if (port.IsOpen){
-                    port.Write((char)(LCD_OPEN_BACK_LIGHT) + "");
-                    port.Write((char)(LCD_CLEAR) + "");
-                    port.Write("HWiFNO App Error!");
-                    port.Write((char)(LCD_CHANGE_LINE) + "");
+            try {
+                if (!port.IsOpen && cb_COM.Text != "TEST") {                    
+                    port.PortName = cb_COM.Text;
+                    port.Open();                    
+                    return;
                 }
-                return;
-            }
-            
-            if (!ReadMemory()){
-                toolStripStatusLabel1.Text = "HWiFNO Sensor Error!";
-                tb_preview.Text = "HWiFNO Sensor Error!";
-                if (port.IsOpen){
-                    port.Write((char)(LCD_OPEN_BACK_LIGHT) + "");
-                    port.Write((char)(LCD_CLEAR) + "");
-                    port.Write("HWiFNO Sensor Error!");
-                    port.Write((char)(LCD_CHANGE_LINE) + "");
-                }
-                return;
-            }
 
-            if (data_arr.Count > 0){
-                try{
+                if (!HWiNFOisStarted()) {
+                    toolStripStatusLabel1.Text = "HWiFNO App Error!";
+                    tb_preview.Text = "HWiFNO App Error!";
+                    if (port.IsOpen) {
+                        port.Write((char)(LCD_OPEN_BACK_LIGHT) + "");
+                        port.Write((char)(LCD_CLEAR) + "");
+                        port.Write("HWiFNO App Error!");
+                        port.Write((char)(LCD_CHANGE_LINE) + "");
+                    }
+                    return;
+                }
+
+                if (!ReadMemory()) {
+                    toolStripStatusLabel1.Text = "HWiFNO Sensor Error!";
+                    tb_preview.Text = "HWiFNO Sensor Error!";
+                    if (port.IsOpen) {
+                        port.Write((char)(LCD_OPEN_BACK_LIGHT) + "");
+                        port.Write((char)(LCD_CLEAR) + "");
+                        port.Write("HWiFNO Sensor Error!");
+                        port.Write((char)(LCD_CHANGE_LINE) + "");
+                    }
+                    return;
+                }
+
+                if (data_arr.Count > 0) {                    
                     //LIU();
-                    HAO();
-                }
-                catch (Exception){
-                    SendToPreviewScreen("serial error");
-                    //eventLog.WriteEntry("Sending data to serial fail: " + ex.Message, EventLogEntryType.Error);
-                    //port_opened = false;
+                    HAO();                    
                 }
             }
+            catch (UnauthorizedAccessException ex) {
+                SendToPreviewScreen(ex.Message);
+            }
+            catch (IOException ex) {                
+                SendToPreviewScreen(ex.Message);                
+            }
+            catch (Exception ex) {
+                Log(ex.ToString());
+                try {
+                    SendToPreviewScreen("serial error");
+                }
+                catch { }
+            }
+        }
+
+        private void Log(string msg) {
+            try {
+                using (StreamWriter sw = File.AppendText(LOG_PATH)) {
+                    sw.WriteLine(DateTime.Now.ToString("yyyy/MM/dd HH:mm:ss | ") + msg);
+                }
+            }
+            catch{}
         }
 
         private static bool HWiNFOisStarted(){
@@ -272,7 +294,8 @@ namespace Arduino_Monitor{
                 }
                 return true;
             }
-            catch (Exception){
+            catch{
+                
                 //eventLog.WriteEntry("An error occured while opening the HWiNFO shared memory: " + ex.Message, EventLogEntryType.Error);
                 return false;
             }
