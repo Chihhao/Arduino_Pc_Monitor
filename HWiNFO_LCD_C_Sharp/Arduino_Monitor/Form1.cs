@@ -11,7 +11,7 @@ using System.IO;
 
 namespace Arduino_Monitor{
     public partial class Form1 : Form{
-        const string VERSION = "ver: 2023/1/8b";
+        const string VERSION = "ver: 2023/9/17a";
 
         const string LOG_PATH = "HWiNFO_LCD.log";
 

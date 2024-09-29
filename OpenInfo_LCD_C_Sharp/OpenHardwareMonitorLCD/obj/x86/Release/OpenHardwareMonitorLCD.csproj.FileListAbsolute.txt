@@ -23,3 +23,16 @@ C:\GitHub\Arduino_Pc_Monitor\OpenInfo_LCD_C#\OpenHardwareMonitorLCD\obj\x86\Rele
 C:\GitHub\Arduino_Pc_Monitor\OpenInfo_LCD_C#\OpenHardwareMonitorLCD\obj\x86\Release\OpenHardwareMonitorLCD.Form1.resources
 C:\GitHub\Arduino_Pc_Monitor\OpenInfo_LCD_C#\OpenHardwareMonitorLCD\obj\x86\Release\OpenHardwareMonitorLCD.Properties.Resources.resources
 C:\GitHub\Arduino_Pc_Monitor\OpenInfo_LCD_C#\OpenHardwareMonitorLCD\obj\x86\Release\OpenHardwareMonitorLCD.csproj.GenerateResource.Cache
+C:\GitHub\Arduino_Pc_Monitor\OpenInfo_LCD_C_Sharp\OpenHardwareMonitorLCD\bin\Release\OpenHardwareMonitorLCD.exe.config
+C:\GitHub\Arduino_Pc_Monitor\OpenInfo_LCD_C_Sharp\OpenHardwareMonitorLCD\bin\Release\OpenHardwareMonitorLCD.exe
+C:\GitHub\Arduino_Pc_Monitor\OpenInfo_LCD_C_Sharp\OpenHardwareMonitorLCD\bin\Release\OpenHardwareMonitorLCD.pdb
+C:\GitHub\Arduino_Pc_Monitor\OpenInfo_LCD_C_Sharp\OpenHardwareMonitorLCD\bin\Release\OpenHardwareMonitorLib.dll
+C:\GitHub\Arduino_Pc_Monitor\OpenInfo_LCD_C_Sharp\OpenHardwareMonitorLCD\obj\x86\Release\OpenHardwareMonitorLCD.csproj.AssemblyReference.cache
+C:\GitHub\Arduino_Pc_Monitor\OpenInfo_LCD_C_Sharp\OpenHardwareMonitorLCD\obj\x86\Release\OpenHardwareMonitorLCD.csproj.SuggestedBindingRedirects.cache
+C:\GitHub\Arduino_Pc_Monitor\OpenInfo_LCD_C_Sharp\OpenHardwareMonitorLCD\obj\x86\Release\OpenHardwareMonitorLCD.Form1.resources
+C:\GitHub\Arduino_Pc_Monitor\OpenInfo_LCD_C_Sharp\OpenHardwareMonitorLCD\obj\x86\Release\OpenHardwareMonitorLCD.Properties.Resources.resources
+C:\GitHub\Arduino_Pc_Monitor\OpenInfo_LCD_C_Sharp\OpenHardwareMonitorLCD\obj\x86\Release\OpenHardwareMonitorLCD.csproj.GenerateResource.cache
+C:\GitHub\Arduino_Pc_Monitor\OpenInfo_LCD_C_Sharp\OpenHardwareMonitorLCD\obj\x86\Release\OpenHardwareMonitorLCD.csproj.CoreCompileInputs.cache
+C:\GitHub\Arduino_Pc_Monitor\OpenInfo_LCD_C_Sharp\OpenHardwareMonitorLCD\obj\x86\Release\OpenHardwareMonitorLCD.csproj.CopyComplete
+C:\GitHub\Arduino_Pc_Monitor\OpenInfo_LCD_C_Sharp\OpenHardwareMonitorLCD\obj\x86\Release\OpenHardwareMonitorLCD.exe
+C:\GitHub\Arduino_Pc_Monitor\OpenInfo_LCD_C_Sharp\OpenHardwareMonitorLCD\obj\x86\Release\OpenHardwareMonitorLCD.pdb
