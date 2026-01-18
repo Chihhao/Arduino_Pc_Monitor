@@ -106,7 +106,6 @@ void setup() {
   
   tft.fillScreen(C_BG);
   Serial.printf("TFT Width: %d, Height: %d\n", tft.width(), tft.height());
-  Serial.printf("C_BG Value: 0x%04X\n", C_BG); // 確認背景色是否為 0x0001
   tft.setTextDatum(TL_DATUM);
 
   // 初始化 Sprite 以防止圖表閃爍
@@ -119,8 +118,6 @@ void setup() {
     tft.drawString("PSRAM Alloc Failed!", 10, 50);
     tft.drawString("Enable OPI PSRAM", 10, 80);
     while(1) delay(1000); // 停在這裡，避免後續執行錯誤
-  } else {
-    Serial.println("BG Sprite created successfully in PSRAM.");
   }
 
   largeSprite.createSprite(DASH_GRAPH_W, GRAPH_H_L);
@@ -368,14 +365,12 @@ void parseAndDisplay(String& json, bool isDataValid) {
   static unsigned long lastBtnTime = 0;
   static bool btnPressed = false;
   static int lastPage = 0;
-  bool pageChanged = false; // 用於記錄本幀是否發生換頁
 
   if (digitalRead(PIN_BTN) == LOW) {
     if (!btnPressed && millis() - lastBtnTime > 200) { // 防止連點與彈跳
       currentPage = (currentPage + 1) % 3;
       btnPressed = true;
       lastBtnTime = millis();
-      Serial.printf("[Debug] Button Pressed. New Page Index: %d\n", currentPage);
     }
   } else {
     btnPressed = false;
@@ -385,8 +380,6 @@ void parseAndDisplay(String& json, bool isDataValid) {
   // 因為 bgSprite 是全螢幕大小且每一幀都會重繪並覆蓋，
   // 額外的 fillRect 反而可能干擾驅動程式的視窗設定，導致右半邊無法更新。
   if (currentPage != lastPage) {
-    Serial.printf("[Debug] Page Switching: %d -> %d\n", lastPage, currentPage);
-    pageChanged = true;
     lastPage = currentPage;
   }
 
@@ -494,24 +487,11 @@ void parseAndDisplay(String& json, bool isDataValid) {
   }
 
   // --- 最後一次性將緩衝區推送到螢幕，消除閃爍 ---
-  if (pageChanged) {
-    Serial.println("[Debug] Pushing Sprite (Page Changed)...");
-    Serial.printf("[Debug] TFT Size: %d x %d\n", tft.width(), tft.height());
-    unsigned long tStart = millis();
-    
-    // 修改: 將全螢幕 Sprite 分成上下兩半推送，避開 ESP32 DMA 單次傳輸 64KB 的限制
-    // 全螢幕 320x170x2 = 108,800 bytes，超過 65535 bytes 會導致後半段(右半邊)無法更新
-    uint16_t* spritePtr = (uint16_t*)bgSprite.getPointer();
-    tft.pushImage(0, 0, 320, 85, spritePtr); // 推送上半部 (Rows 0-84)
-    tft.pushImage(0, 85, 320, 85, spritePtr + (320 * 85)); // 推送下半部 (Rows 85-169)
-    
-    Serial.printf("[Debug] PushSprite Done. Time: %lu ms\n", millis() - tStart);
-  } else {
-    // 平常更新也使用分段推送，確保畫面一致且無殘留
-    uint16_t* spritePtr = (uint16_t*)bgSprite.getPointer();
-    tft.pushImage(0, 0, 320, 85, spritePtr);
-    tft.pushImage(0, 85, 320, 85, spritePtr + (320 * 85));
-  }
+  // 修改: 將全螢幕 Sprite 分成上下兩半推送，避開 ESP32 DMA 單次傳輸 64KB 的限制
+  // 全螢幕 320x170x2 = 108,800 bytes，超過 65535 bytes 會導致後半段(右半邊)無法更新
+  uint16_t* spritePtr = (uint16_t*)bgSprite.getPointer();
+  tft.pushImage(0, 0, 320, 85, spritePtr); // 推送上半部 (Rows 0-84)
+  tft.pushImage(0, 85, 320, 85, spritePtr + (320 * 85)); // 推送下半部 (Rows 85-169)
 }
 
 // --- 頁面 2: 大時鐘 ---
