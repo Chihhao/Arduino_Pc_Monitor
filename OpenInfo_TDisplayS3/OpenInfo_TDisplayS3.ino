@@ -213,9 +213,28 @@ void parseAndDisplay(String& json, bool isDataValid) {
   updateHistory(netDlHistory, netDL);
   updateHistory(netUlHistory, netUL);
 
-  // --- 1. 文字更新 (每一幀都更新，因為背景被重繪了) ---
-  {
-    // --- 狀態欄 ---
+  // --- 1. 文字數據更新 (每秒一次) ---
+  // 定義靜態變數以快取文字數據
+  static unsigned long lastTextUpdate = 0;
+  static String s_mmdd = "--/--";
+  static String s_dayPart = "---";
+  static String s_hhmm = "--:--";
+  static String s_ss = "--";
+  static uint16_t s_statusColor = C_WARN;
+  static int s_cpuTemp = 0;
+  static uint16_t s_tempColor = C_TEXT;
+  static int s_cpuLoad = 0;
+  static float s_ramUsed = 0;
+  static int s_ramLoad = 0;
+  static float s_diskR = 0;
+  static float s_diskW = 0;
+  static float s_netDL = 0;
+  static float s_netUL = 0;
+
+  // 每秒更新一次快取變數
+  if (millis() - lastTextUpdate > 1000 || lastTextUpdate == 0) {
+    lastTextUpdate = millis();
+
     String fullDate = String((const char*)doc["sys"]["date"]);
     String timeStr = String((const char*)doc["sys"]["time"]);
 
@@ -231,41 +250,60 @@ void parseAndDisplay(String& json, bool isDataValid) {
     String day = datePart.substring(lastSlash + 1);
     if (month.length() == 1) month = "0" + month;
     if (day.length() == 1) day = "0" + day;
-    String mmdd = month + "/" + day;
+    s_mmdd = month + "/" + day;
 
-    // 格式化星期：(Sun) -> SUN
+    // 格式化星期
     dayPart.replace("(", "");
     dayPart.replace(")", "");
     dayPart.toUpperCase();
+    s_dayPart = dayPart;
 
-    // 分割時間
-    String hhmm = (timeStr.length() >= 5) ? timeStr.substring(0, 5) : timeStr;
-    String ss = (timeStr.length() >= 8) ? timeStr.substring(6) : "";
+    // 時間
+    s_hhmm = (timeStr.length() >= 5) ? timeStr.substring(0, 5) : timeStr;
+    s_ss = (timeStr.length() >= 8) ? timeStr.substring(6) : "";
 
+    // 狀態
+    s_statusColor = isDataValid ? C_OK : C_WARN;
+
+    // CPU
+    s_cpuTemp = cpuTemp;
+    s_tempColor = (s_cpuTemp > 80) ? C_WARN : C_TEXT;
+    s_cpuLoad = (int)cpuLoad;
+    if (s_cpuLoad > 99) s_cpuLoad = 99;
+
+    // RAM
+    s_ramUsed = ramUsed;
+    s_ramLoad = (int)ramLoad;
+    if (s_ramLoad > 99) s_ramLoad = 99;
+
+    // Disk/Net
+    s_diskR = diskR;
+    s_diskW = diskW;
+    s_netDL = netDL;
+    s_netUL = netUL;
+  }
+
+  // --- 2. 文字繪製 (每一幀都重繪，但使用快取變數) ---
+  {
     bgSprite.setTextColor(C_TEXT, C_PANEL);
     bgSprite.setTextSize(2);
     bgSprite.setTextDatum(MC_DATUM);
 
-    static String lastDate = "";
-    static String lastDay = "";
-
-    // 移除快取判斷，直接繪製
     bgSprite.setTextPadding(70);
-    bgSprite.drawString(mmdd, 41, HEADER_STRING_Y); 
+    bgSprite.drawString(s_mmdd, 41, HEADER_STRING_Y); 
     
     bgSprite.setTextPadding(70);
-    bgSprite.drawString(dayPart, 121, HEADER_STRING_Y); 
+    bgSprite.drawString(s_dayPart, 121, HEADER_STRING_Y); 
 
     bgSprite.setTextPadding(70);
-    bgSprite.drawString(hhmm, 201, HEADER_STRING_Y);
+    bgSprite.drawString(s_hhmm, 201, HEADER_STRING_Y);
     
     bgSprite.setTextPadding(30);
-    bgSprite.drawString(ss, 261, HEADER_STRING_Y);
+    bgSprite.drawString(s_ss, 261, HEADER_STRING_Y);
     bgSprite.setTextPadding(0);
 
     // 狀態圖示
-    uint16_t statusColor = isDataValid ? C_OK : C_WARN;
-    bgSprite.fillCircle(300, 14, 5, statusColor); 
+    bgSprite.fillCircle(300, 14, 5, s_statusColor); 
     
     bgSprite.setTextDatum(TL_DATUM); // 置左
 
@@ -274,33 +312,28 @@ void parseAndDisplay(String& json, bool isDataValid) {
 
     // --- CPU 文字 ---
     // CPU 溫度
-    uint16_t tempColor = (cpuTemp > 80) ? C_WARN : C_TEXT;
     _y = 50;
     _x = 46; 
-    bgSprite.setTextColor(tempColor, C_PANEL);
+    bgSprite.setTextColor(s_tempColor, C_PANEL);
     bgSprite.setTextDatum(TR_DATUM);
     bgSprite.setTextSize(2);
     bgSprite.fillRect(2, _y, PANEL_WIDTH, 20, C_PANEL);
-    bgSprite.drawNumber(cpuTemp, _x - 3, _y);
+    bgSprite.drawNumber(s_cpuTemp, _x - 3, _y);
     bgSprite.setTextDatum(TL_DATUM);
     bgSprite.drawString("C", _x + 5, _y);          
-    bgSprite.drawCircle(_x, _y + 2 , 2, tempColor); 
+    bgSprite.drawCircle(_x, _y + 2 , 2, s_tempColor); 
 
     // 分隔線
     bgSprite.drawFastHLine(4, _y + 18, PANEL_WIDTH-4, C_GRID);
 
     // CPU Load 
-    float dispCpuLoad = cpuLoad;
-    if((int)dispCpuLoad > 99) dispCpuLoad = 99;
-    uint16_t cpuColor = C_CPU;
-
     _y = 77;
     _x = 55; 
-    bgSprite.setTextColor(cpuColor, C_PANEL);
+    bgSprite.setTextColor(C_CPU, C_PANEL);
     bgSprite.setTextDatum(TR_DATUM);
     bgSprite.setTextSize(3);    
     bgSprite.fillRect(2, _y, PANEL_WIDTH, 25, C_PANEL);
-    bgSprite.drawNumber((int)dispCpuLoad, _x, _y);
+    bgSprite.drawNumber(s_cpuLoad, _x, _y);
     bgSprite.setTextSize(2);
     bgSprite.setTextDatum(TL_DATUM);
     bgSprite.drawString("%", _x, _y + 8);
@@ -313,7 +346,7 @@ void parseAndDisplay(String& json, bool isDataValid) {
     bgSprite.setTextDatum(TR_DATUM);
     bgSprite.setTextSize(2);    
     bgSprite.fillRect(82, _y, PANEL_WIDTH, 20, C_PANEL);
-    bgSprite.drawFloat(ramUsed, 1, _x, _y);
+    bgSprite.drawFloat(s_ramUsed, 1, _x, _y);
     bgSprite.setTextSize(1);
     bgSprite.setTextDatum(TL_DATUM);
     bgSprite.drawString("GB", _x + 2, _y + 8);
@@ -322,30 +355,26 @@ void parseAndDisplay(String& json, bool isDataValid) {
     bgSprite.drawFastHLine(84, _y + 18, PANEL_WIDTH-4, C_GRID);
 
     // RAM Load
-    float dispRamLoad = ramLoad;
-    if((int)dispRamLoad > 99) dispRamLoad = 99;
-    uint16_t ramColor = C_RAM;
-
     _y = 77;
     _x = 135; // 82 + 53
-    bgSprite.setTextColor(ramColor, C_PANEL);
+    bgSprite.setTextColor(C_RAM, C_PANEL);
     bgSprite.setTextDatum(TR_DATUM);
     bgSprite.setTextSize(3);
 
     bgSprite.fillRect(82, _y, PANEL_WIDTH, 25, C_PANEL);
 
-    bgSprite.drawNumber((int)dispRamLoad, _x, _y);
+    bgSprite.drawNumber(s_ramLoad, _x, _y);
     bgSprite.setTextSize(2);
     bgSprite.setTextDatum(TL_DATUM);
     bgSprite.drawString("%", _x, _y + 8);
 
     // --- Disk 文字 ---
-    drawMetric(diskR, 164, 50, false);
-    drawMetric(diskW, 164, 110, true);
+    drawMetric(s_diskR, 164, 50, false);
+    drawMetric(s_diskW, 164, 110, true);
 
     // --- Net 文字 ---
-    drawMetric(netDL, 244, 50, false);
-    drawMetric(netUL, 244, 110, true);
+    drawMetric(s_netDL, 244, 50, false);
+    drawMetric(s_netUL, 244, 110, true);
   }
 
   // --- 2. 圖表更新 (每一幀都更新) ---
