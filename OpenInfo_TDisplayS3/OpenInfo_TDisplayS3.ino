@@ -39,6 +39,7 @@
 TFT_eSPI tft = TFT_eSPI(); 
 TFT_eSprite largeSprite = TFT_eSprite(&tft);
 TFT_eSprite smallSprite = TFT_eSprite(&tft);
+TFT_eSprite bgSprite = TFT_eSprite(&tft); // 新增全螢幕緩衝區
 
 #define P_MARGIN 2
 #define P_GAP 4
@@ -72,6 +73,7 @@ void setup() {
   tft.setTextDatum(TL_DATUM);
 
   // 初始化 Sprite 以防止圖表閃爍
+  bgSprite.createSprite(SCREEN_W, SCREEN_H); // 建立全螢幕緩衝區
   largeSprite.createSprite(GRAPH_W, GRAPH_H_L);
   smallSprite.createSprite(GRAPH_W, GRAPH_H_S);
   
@@ -82,8 +84,7 @@ void setup() {
     netDlHistory[i] = 0; netUlHistory[i] = 0;
   }
 
-  // 繪製靜態介面佈局
-  drawStaticLayout();
+  // 移除此處的 drawStaticLayout，改在 parseAndDisplay 中每一幀繪製
 }
 
 void loop() {
@@ -141,7 +142,7 @@ void simulateData() {
 }
 
 void drawStaticLayout() {
-  tft.fillScreen(C_BG);
+  bgSprite.fillScreen(C_BG); // 改為清除緩衝區
 
   int yTop = P_MARGIN;
   int hTop = 25;
@@ -150,11 +151,11 @@ void drawStaticLayout() {
   // 頂部欄
   // 5 個區塊：76, 76, 76, 36, 36。間距：4
   int x = P_MARGIN;
-  tft.fillRoundRect(x, yTop, PANEL_WIDTH, hTop, 4, C_PANEL); x += PANEL_WIDTH + gap; // 日期
-  tft.fillRoundRect(x, yTop, PANEL_WIDTH, hTop, 4, C_PANEL); x += PANEL_WIDTH + gap; // 星期
-  tft.fillRoundRect(x, yTop, PANEL_WIDTH, hTop, 4, C_PANEL); x += PANEL_WIDTH + gap; // 時間
-  tft.fillRoundRect(x, yTop, PANEL_WIDTH_SMALL, hTop, 4, C_PANEL); x += 36 + gap; // 秒
-  tft.fillRoundRect(x, yTop, PANEL_WIDTH_SMALL, hTop, 4, C_PANEL);                // 狀態
+  bgSprite.fillRoundRect(x, yTop, PANEL_WIDTH, hTop, 4, C_PANEL); x += PANEL_WIDTH + gap; // 日期
+  bgSprite.fillRoundRect(x, yTop, PANEL_WIDTH, hTop, 4, C_PANEL); x += PANEL_WIDTH + gap; // 星期
+  bgSprite.fillRoundRect(x, yTop, PANEL_WIDTH, hTop, 4, C_PANEL); x += PANEL_WIDTH + gap; // 時間
+  bgSprite.fillRoundRect(x, yTop, PANEL_WIDTH_SMALL, hTop, 4, C_PANEL); x += 36 + gap; // 秒
+  bgSprite.fillRoundRect(x, yTop, PANEL_WIDTH_SMALL, hTop, 4, C_PANEL);                // 狀態
 
   // 4 欄：CPU, RAM, Disk, Net
   // 寬度 76，間距 4。X: 2, 82, 162, 242
@@ -163,24 +164,24 @@ void drawStaticLayout() {
   int wMain = 76;
   
   x = P_MARGIN;
-  tft.fillRoundRect(x, yMain, wMain, hMain, 4, C_PANEL); x += wMain + gap; // CPU
-  tft.fillRoundRect(x, yMain, wMain, hMain, 4, C_PANEL); x += wMain + gap; // RAM
-  tft.fillRoundRect(x, yMain, wMain, hMain, 4, C_PANEL); x += wMain + gap; // Disk
-  tft.fillRoundRect(x, yMain, wMain, hMain, 4, C_PANEL);                   // Net
+  bgSprite.fillRoundRect(x, yMain, wMain, hMain, 4, C_PANEL); x += wMain + gap; // CPU
+  bgSprite.fillRoundRect(x, yMain, wMain, hMain, 4, C_PANEL); x += wMain + gap; // RAM
+  bgSprite.fillRoundRect(x, yMain, wMain, hMain, 4, C_PANEL); x += wMain + gap; // Disk
+  bgSprite.fillRoundRect(x, yMain, wMain, hMain, 4, C_PANEL);                   // Net
 
   // 標籤
-  tft.setTextColor(C_LABEL, C_PANEL);
-  tft.setTextSize(1);
-  tft.setTextDatum(TC_DATUM); // 置中
+  bgSprite.setTextColor(C_LABEL, C_PANEL);
+  bgSprite.setTextSize(1);
+  bgSprite.setTextDatum(TC_DATUM); // 置中
   
   // 中心點：2+38=40, 82+38=120, 162+38=200, 242+38=280
   int labelY = yMain + 4;
-  tft.drawString("CPU", 40, labelY);
-  tft.drawString("RAM", 120, labelY);
-  tft.drawString("DISK", 200, labelY);
-  tft.drawString("NETWORK", 280, labelY);
+  bgSprite.drawString("CPU", 40, labelY);
+  bgSprite.drawString("RAM", 120, labelY);
+  bgSprite.drawString("DISK", 200, labelY);
+  bgSprite.drawString("NETWORK", 280, labelY);
 
-  tft.setTextDatum(TL_DATUM); // 重置
+  bgSprite.setTextDatum(TL_DATUM); // 重置
 }
 
 void parseAndDisplay(String& json, bool isDataValid) {
@@ -190,6 +191,9 @@ void parseAndDisplay(String& json, bool isDataValid) {
   if (error) {
     return;
   }
+
+  // --- 每一幀都重繪背景與靜態佈局 (雙重緩衝) ---
+  drawStaticLayout();
 
   // --- 0. 預先解析數據 (供圖表與文字使用) ---
   float cpuLoad = doc["cpu"]["load"];
@@ -209,13 +213,8 @@ void parseAndDisplay(String& json, bool isDataValid) {
   updateHistory(netDlHistory, netDL);
   updateHistory(netUlHistory, netUL);
 
-  // --- 1. 文字更新 (限制 1 FPS) ---
-  static unsigned long lastTextUpdate = 0;
-  bool updateText = (millis() - lastTextUpdate > 1000);
-  
-  if (updateText) {
-    lastTextUpdate = millis();
-
+  // --- 1. 文字更新 (每一幀都更新，因為背景被重繪了) ---
+  {
     // --- 狀態欄 ---
     String fullDate = String((const char*)doc["sys"]["date"]);
     String timeStr = String((const char*)doc["sys"]["time"]);
@@ -243,36 +242,32 @@ void parseAndDisplay(String& json, bool isDataValid) {
     String hhmm = (timeStr.length() >= 5) ? timeStr.substring(0, 5) : timeStr;
     String ss = (timeStr.length() >= 8) ? timeStr.substring(6) : "";
 
-    tft.setTextColor(C_TEXT, C_PANEL);
-    tft.setTextSize(2);
-    tft.setTextDatum(MC_DATUM);
+    bgSprite.setTextColor(C_TEXT, C_PANEL);
+    bgSprite.setTextSize(2);
+    bgSprite.setTextDatum(MC_DATUM);
 
     static String lastDate = "";
     static String lastDay = "";
 
-    if (mmdd != lastDate) {
-      tft.setTextPadding(70);
-      tft.drawString(mmdd, 41, HEADER_STRING_Y); 
-      lastDate = mmdd;
-    }
-    if (dayPart != lastDay) {
-      tft.setTextPadding(70);
-      tft.drawString(dayPart, 121, HEADER_STRING_Y); 
-      lastDay = dayPart;
-    }
-
-    tft.setTextPadding(70);
-    tft.drawString(hhmm, 201, HEADER_STRING_Y);
+    // 移除快取判斷，直接繪製
+    bgSprite.setTextPadding(70);
+    bgSprite.drawString(mmdd, 41, HEADER_STRING_Y); 
     
-    tft.setTextPadding(30);
-    tft.drawString(ss, 261, HEADER_STRING_Y);
-    tft.setTextPadding(0);
+    bgSprite.setTextPadding(70);
+    bgSprite.drawString(dayPart, 121, HEADER_STRING_Y); 
+
+    bgSprite.setTextPadding(70);
+    bgSprite.drawString(hhmm, 201, HEADER_STRING_Y);
+    
+    bgSprite.setTextPadding(30);
+    bgSprite.drawString(ss, 261, HEADER_STRING_Y);
+    bgSprite.setTextPadding(0);
 
     // 狀態圖示
     uint16_t statusColor = isDataValid ? C_OK : C_WARN;
-    tft.fillCircle(300, 14, 5, statusColor); 
+    bgSprite.fillCircle(300, 14, 5, statusColor); 
     
-    tft.setTextDatum(TL_DATUM); // 置左
+    bgSprite.setTextDatum(TL_DATUM); // 置左
 
     // 用來計算第二排文字的位置
     int _x, _y;
@@ -282,17 +277,17 @@ void parseAndDisplay(String& json, bool isDataValid) {
     uint16_t tempColor = (cpuTemp > 80) ? C_WARN : C_TEXT;
     _y = 50;
     _x = 46; 
-    tft.setTextColor(tempColor, C_PANEL);
-    tft.setTextDatum(TR_DATUM);
-    tft.setTextSize(2);
-    tft.fillRect(2, _y, PANEL_WIDTH, 20, C_PANEL);
-    tft.drawNumber(cpuTemp, _x - 3, _y);
-    tft.setTextDatum(TL_DATUM);
-    tft.drawString("C", _x + 5, _y);          
-    tft.drawCircle(_x, _y + 2 , 2, tempColor); 
+    bgSprite.setTextColor(tempColor, C_PANEL);
+    bgSprite.setTextDatum(TR_DATUM);
+    bgSprite.setTextSize(2);
+    bgSprite.fillRect(2, _y, PANEL_WIDTH, 20, C_PANEL);
+    bgSprite.drawNumber(cpuTemp, _x - 3, _y);
+    bgSprite.setTextDatum(TL_DATUM);
+    bgSprite.drawString("C", _x + 5, _y);          
+    bgSprite.drawCircle(_x, _y + 2 , 2, tempColor); 
 
     // 分隔線
-    tft.drawFastHLine(4, _y + 18, PANEL_WIDTH-4, C_GRID);
+    bgSprite.drawFastHLine(4, _y + 18, PANEL_WIDTH-4, C_GRID);
 
     // CPU Load 
     float dispCpuLoad = cpuLoad;
@@ -301,30 +296,30 @@ void parseAndDisplay(String& json, bool isDataValid) {
 
     _y = 77;
     _x = 55; 
-    tft.setTextColor(cpuColor, C_PANEL);
-    tft.setTextDatum(TR_DATUM);
-    tft.setTextSize(3);
-    tft.fillRect(2, _y, PANEL_WIDTH, 25, C_PANEL);
-    tft.drawNumber((int)dispCpuLoad, _x, _y);
-    tft.setTextSize(2);
-    tft.setTextDatum(TL_DATUM);
-    tft.drawString("%", _x, _y + 8);
+    bgSprite.setTextColor(cpuColor, C_PANEL);
+    bgSprite.setTextDatum(TR_DATUM);
+    bgSprite.setTextSize(3);    
+    bgSprite.fillRect(2, _y, PANEL_WIDTH, 25, C_PANEL);
+    bgSprite.drawNumber((int)dispCpuLoad, _x, _y);
+    bgSprite.setTextSize(2);
+    bgSprite.setTextDatum(TL_DATUM);
+    bgSprite.drawString("%", _x, _y + 8);
 
     // --- RAM 文字 ---
     // 已用 RAM
     _y = 50;
     _x = 138; 
-    tft.setTextColor(C_TEXT, C_PANEL);
-    tft.setTextDatum(TR_DATUM);
-    tft.setTextSize(2);
-    tft.fillRect(82, _y, PANEL_WIDTH, 20, C_PANEL);
-    tft.drawFloat(ramUsed, 1, _x, _y);
-    tft.setTextSize(1);
-    tft.setTextDatum(TL_DATUM);
-    tft.drawString("GB", _x + 2, _y + 8);
+    bgSprite.setTextColor(C_TEXT, C_PANEL);
+    bgSprite.setTextDatum(TR_DATUM);
+    bgSprite.setTextSize(2);    
+    bgSprite.fillRect(82, _y, PANEL_WIDTH, 20, C_PANEL);
+    bgSprite.drawFloat(ramUsed, 1, _x, _y);
+    bgSprite.setTextSize(1);
+    bgSprite.setTextDatum(TL_DATUM);
+    bgSprite.drawString("GB", _x + 2, _y + 8);
 
     // 分隔線
-    tft.drawFastHLine(84, _y + 18, PANEL_WIDTH-4, C_GRID);
+    bgSprite.drawFastHLine(84, _y + 18, PANEL_WIDTH-4, C_GRID);
 
     // RAM Load
     float dispRamLoad = ramLoad;
@@ -333,14 +328,16 @@ void parseAndDisplay(String& json, bool isDataValid) {
 
     _y = 77;
     _x = 135; // 82 + 53
-    tft.setTextColor(ramColor, C_PANEL);
-    tft.setTextDatum(TR_DATUM);
-    tft.setTextSize(3);
-    tft.fillRect(82, _y, PANEL_WIDTH, 25, C_PANEL);
-    tft.drawNumber((int)dispRamLoad, _x, _y);
-    tft.setTextSize(2);
-    tft.setTextDatum(TL_DATUM);
-    tft.drawString("%", _x, _y + 8);
+    bgSprite.setTextColor(ramColor, C_PANEL);
+    bgSprite.setTextDatum(TR_DATUM);
+    bgSprite.setTextSize(3);
+
+    bgSprite.fillRect(82, _y, PANEL_WIDTH, 25, C_PANEL);
+
+    bgSprite.drawNumber((int)dispRamLoad, _x, _y);
+    bgSprite.setTextSize(2);
+    bgSprite.setTextDatum(TL_DATUM);
+    bgSprite.drawString("%", _x, _y + 8);
 
     // --- Disk 文字 ---
     drawMetric(diskR, 164, 50, false);
@@ -364,19 +361,22 @@ void parseAndDisplay(String& json, bool isDataValid) {
     int boxW = 80;
     int boxH = 32;
     int boxX = (SCREEN_W - boxW) / 2;
-    int boxY = (SCREEN_H - boxH) / 2;
+    int boxY = (SCREEN_H - boxH) / 2 + 2;
 
     // 繪製背景 (黑色) 與邊框 (紅色)
-    tft.fillRoundRect(boxX, boxY, boxW, boxH, 6, C_BG);
-    tft.drawRoundRect(boxX, boxY, boxW, boxH, 6, C_WARN);
+    bgSprite.fillRoundRect(boxX, boxY, boxW, boxH, 6, C_BG);
+    bgSprite.drawRoundRect(boxX, boxY, boxW, boxH, 6, C_WARN);
 
     // 繪製文字
-    tft.setTextColor(C_WARN, C_BG);
-    tft.setTextSize(2);
-    tft.setTextDatum(MC_DATUM);
-    tft.drawString("DEMO", SCREEN_W / 2, SCREEN_H / 2);
-    tft.setTextDatum(TL_DATUM); // 還原對齊設定
+    bgSprite.setTextColor(C_WARN, C_BG);
+    bgSprite.setTextSize(2);
+    bgSprite.setTextDatum(MC_DATUM);
+    bgSprite.drawString("DEMO", SCREEN_W / 2, SCREEN_H / 2);
+    bgSprite.setTextDatum(TL_DATUM); // 還原對齊設定
   }
+
+  // --- 最後一次性將緩衝區推送到螢幕，消除閃爍 ---
+  bgSprite.pushSprite(0, 0);
 }
 
 void updateHistory(float* history, float value) {
@@ -439,11 +439,13 @@ void drawGraph(TFT_eSprite &sprite, float* history, int x, int y, uint16_t color
     
     sprite.drawLine(i, y1, i + 1, y2, color);
   }
-  sprite.pushSprite(x, y);
+
+  // 改為推送到全螢幕緩衝區，而不是直接推送到螢幕
+  sprite.pushToSprite(&bgSprite, x, y);
 }
 
 void drawMetric(float valMB, int x, int y, bool isUp) {
-  tft.fillRect(x, y, 72, 18, C_PANEL);
+  bgSprite.fillRect(x, y, 72, 18, C_PANEL);
   
   int valInt = 0;
   String unit = "";
@@ -459,7 +461,7 @@ void drawMetric(float valMB, int x, int y, bool isUp) {
     unit = "M/s";
   }
   
-  tft.setTextColor(C_TEXT, C_PANEL);
+  bgSprite.setTextColor(C_TEXT, C_PANEL);
   
   // 圖示
   int ix = x + 2;
@@ -468,25 +470,25 @@ void drawMetric(float valMB, int x, int y, bool isUp) {
   int _height = 8;
 
   if (isUp) {
-    tft.fillTriangle(ix + _width/2, iy, 
+    bgSprite.fillTriangle(ix + _width/2, iy, 
                      ix , iy + _height, 
                      ix + _width, iy + _height, 
                      C_TEXT);
   } else {
     // 倒三角形
-    tft.fillTriangle(ix , iy, 
+    bgSprite.fillTriangle(ix , iy, 
                      ix + _width, iy, 
                      ix + _width/2, iy + _height, 
                      C_TEXT);
   }
   
   // 數字
-  tft.setTextSize(2);
-  tft.setTextDatum(TR_DATUM); // 置右
-  tft.drawNumber(valInt, x + 52, y); 
+  bgSprite.setTextSize(2);
+  bgSprite.setTextDatum(TR_DATUM); // 置右
+  bgSprite.drawNumber(valInt, x + 52, y); 
   
   // 單位
-  tft.setTextSize(1); 
-  tft.setTextDatum(TL_DATUM); // 置左
-  tft.drawString(unit, x + 54, y + 8); 
+  bgSprite.setTextSize(1); 
+  bgSprite.setTextDatum(TL_DATUM); // 置左
+  bgSprite.drawString(unit, x + 54, y + 8); 
 }
