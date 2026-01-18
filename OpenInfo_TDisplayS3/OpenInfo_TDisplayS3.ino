@@ -34,9 +34,7 @@
 #define PIN_BTN 0 // 板載 Boot 按鈕
 
 // 顏色
-// 修改: 使用 0x0001 (極深藍/黑) 代替 0x0000 (純黑)。
-// 這能防止 ESP32-S3 DMA 傳輸時將純黑誤判為透明色，導致右半邊螢幕無法清除舊內容。
-#define C_BG 0x0001 
+#define C_BG TFT_BLACK
 #define C_PANEL 0x18E3 // 深灰
 #define C_TEXT TFT_WHITE
 #define C_LABEL 0x9CD3 // 淺灰
@@ -475,7 +473,7 @@ void parseAndDisplay(String& json, bool isDataValid) {
   // 這是最底層的清除方式，保證舊資料絕對不會留下來
   memset(bgSprite.getPointer(), 0, SCREEN_W * SCREEN_H * 2); 
   
-  // 再使用 fillRect 填入我們想要的背景色 (0x0001)
+  // 再使用 fillRect 填入我們想要的背景色
   bgSprite.fillRect(0, 0, SCREEN_W, SCREEN_H, C_BG);
 
   if (currentPage == 0) {
@@ -487,11 +485,7 @@ void parseAndDisplay(String& json, bool isDataValid) {
   }
 
   // --- 最後一次性將緩衝區推送到螢幕，消除閃爍 ---
-  // 修改: 將全螢幕 Sprite 分成上下兩半推送，避開 ESP32 DMA 單次傳輸 64KB 的限制
-  // 全螢幕 320x170x2 = 108,800 bytes，超過 65535 bytes 會導致後半段(右半邊)無法更新
-  uint16_t* spritePtr = (uint16_t*)bgSprite.getPointer();
-  tft.pushImage(0, 0, 320, 85, spritePtr); // 推送上半部 (Rows 0-84)
-  tft.pushImage(0, 85, 320, 85, spritePtr + (320 * 85)); // 推送下半部 (Rows 85-169)
+  bgSprite.pushSprite(0, 0);
 }
 
 // --- 頁面 2: 大時鐘 ---
