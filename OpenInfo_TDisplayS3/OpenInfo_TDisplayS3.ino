@@ -279,37 +279,21 @@ void parseAndDisplay(String& json, bool isDataValid) {
   tft.setTextColor(C_TEXT, C_PANEL);
   
   // Read
-  tft.fillRect(164, 45, 72, 18, C_PANEL);
-  tft.setTextDatum(TR_DATUM); tft.setTextSize(2);
-  tft.drawString(String(diskR, 1), 215, 45);
-  tft.setTextDatum(TL_DATUM); tft.setTextSize(1);
-  tft.drawString("MB", 217, 50);
+  drawMetric(diskR, 164, 45, false);
   drawGraph(smallSprite, diskReadHistory, 164, 63, C_DISK, 0);
 
   // Write
-  tft.fillRect(164, 103, 72, 18, C_PANEL);
-  tft.setTextDatum(TR_DATUM); tft.setTextSize(2);
-  tft.drawString(String(diskW, 1), 215, 103);
-  tft.setTextDatum(TL_DATUM); tft.setTextSize(1);
-  tft.drawString("MB", 217, 108);
+  drawMetric(diskW, 164, 103, true);
   drawGraph(smallSprite, diskWriteHistory, 164, 121, C_DISK, 0);
 
   // --- 5. Net Column (x=242, w=76) ---
   // Center X = 242 + 38 = 280
   // DL
-  tft.fillRect(244, 45, 72, 18, C_PANEL);
-  tft.setTextDatum(TR_DATUM); tft.setTextSize(2);
-  tft.drawString(String(netDL, 1), 295, 45);
-  tft.setTextDatum(TL_DATUM); tft.setTextSize(1);
-  tft.drawString("MB", 297, 50);
+  drawMetric(netDL, 244, 45, false);
   drawGraph(smallSprite, netDlHistory, 244, 63, C_NET, 0);
 
   // UL
-  tft.fillRect(244, 103, 72, 18, C_PANEL);
-  tft.setTextDatum(TR_DATUM); tft.setTextSize(2);
-  tft.drawString(String(netUL, 1), 295, 103);
-  tft.setTextDatum(TL_DATUM); tft.setTextSize(1);
-  tft.drawString("MB", 297, 108);
+  drawMetric(netUL, 244, 103, true);
   drawGraph(smallSprite, netUlHistory, 244, 121, C_NET, 0);
 }
 
@@ -346,4 +330,46 @@ void drawGraph(TFT_eSprite &sprite, float* history, int x, int y, uint16_t color
     sprite.drawLine(i, y1, i + 1, y2, color);
   }
   sprite.pushSprite(x, y);
+}
+
+void drawMetric(float valMB, int x, int y, bool isUp) {
+  tft.fillRect(x, y, 72, 18, C_PANEL);
+  
+  int valInt = 0;
+  String unit = "";
+  
+  if (valMB >= 1024.0) {
+    valInt = (int)(valMB / 1024.0 + 0.5);
+    unit = "G/s";
+  } else if (valMB < 1.0) {
+    valInt = (int)(valMB * 1024.0 + 0.5);
+    unit = "K/s";
+  } else {
+    valInt = (int)(valMB + 0.5);
+    unit = "M/s";
+  }
+  
+  tft.setTextColor(C_TEXT, C_PANEL);
+  
+  // Icon
+  int ix = x + 2;
+  int iy = y + 4; // Vertically centered in 18px (18-10)/2 = 4
+  
+  if (isUp) {
+    // Up Triangle (Width 12, Height 10 - approx Font 2 size)
+    tft.fillTriangle(ix + 6, iy, ix, iy + 10, ix + 12, iy + 10, C_TEXT);
+  } else {
+    // Down Triangle
+    tft.fillTriangle(ix, iy, ix + 12, iy, ix + 6, iy + 10, C_TEXT);
+  }
+  
+  // Number
+  tft.setTextSize(2);
+  tft.setTextDatum(TR_DATUM);
+  tft.drawNumber(valInt, x + 48, y); 
+  
+  // Unit
+  tft.setTextSize(1);
+  tft.setTextDatum(TL_DATUM);
+  tft.drawString(unit, x + 50, y + 5); 
 }
