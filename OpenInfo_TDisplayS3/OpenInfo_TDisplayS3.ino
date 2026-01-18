@@ -1,49 +1,51 @@
 /*
-  Project: Arduino PC Monitor (T-Display S3 Version)
-  Hardware: LilyGO T-Display S3 (ESP32-S3)
-  Library Requirements:
-    1. TFT_eSPI (by Bodmer)
-       *** 設定說明 (Setup Guide) ***
+  專案：Arduino 電腦監控 (T-Display S3 版本)
+  硬體：LilyGO T-Display S3 (ESP32-S3)
+  函式庫需求：
+    1. TFT_eSPI (作者：Bodmer)
+       *** 設定說明 ***
        請編輯 Arduino libraries/TFT_eSPI/User_Setup_Select.h：
-       1. 註解掉 (Comment out): #include <User_Setup.h>
-       2. 取消註解 (Uncomment): #include <User_Setups/Setup206_LilyGo_T_Display_S3.h>
-    2. ArduinoJson (by Benoit Blanchon) - 建議使用 v7.x
+       1. 註解掉：#include <User_Setup.h>
+       2. 取消註解：#include <User_Setups/Setup206_LilyGo_T_Display_S3.h>
+    2. ArduinoJson (作者：Benoit Blanchon) - 建議使用 v7.x
 */
 
 #include <TFT_eSPI.h>
 #include <ArduinoJson.h>
 #include <SPI.h>
 
-// --- Configuration ---
+// --- 設定 ---
 #define SCREEN_W 320
 #define SCREEN_H 170
 
-// Colors
+// 顏色
 #define C_BG TFT_BLACK
-#define C_PANEL 0x18E3 // Dark Grey (RGB565)
+#define C_PANEL 0x18E3 // 深灰 (RGB565)
 #define C_TEXT TFT_WHITE
-#define C_LABEL 0x9CD3 // Light Grey
-#define C_ACCENT 0x067F // Cyan
-#define C_WARN 0xF800   // Red
-#define C_OK 0x07E0     // Green
-#define C_GRID 0x2124   // Darker Grey
-#define C_CPU 0x067F    // Cyan
-#define C_RAM 0xF81F    // Magenta
-#define C_DISK 0xFFE0   // Yellow
-#define C_NET 0x07E0    // Green
+#define C_LABEL 0x9CD3 // 淺灰
+#define C_ACCENT 0x067F // 青色
+#define C_WARN 0xF800   // 紅色
+#define C_OK 0x07E0     // 綠色
+#define C_GRID 0x2124   // 較深的灰色
+#define C_CPU 0x067F    // 青色
+#define C_RAM 0xF81F    // 洋紅
+#define C_DISK 0xFFE0   // 黃色
+#define C_NET 0x07E0    // 綠色
 
-// Objects
+// 物件
 TFT_eSPI tft = TFT_eSPI(); 
 TFT_eSprite largeSprite = TFT_eSprite(&tft);
 TFT_eSprite smallSprite = TFT_eSprite(&tft);
 
 #define P_MARGIN 2
 #define P_GAP 4
+#define PANEL_WIDTH 76
+#define PANEL_WIDTH_SMALL 36
 
-// Global Variables for Graph
-#define GRAPH_W 72      // 76px Panel - 4px Padding (2px each side)
-#define GRAPH_H_L 56    // Large Graph Height (CPU/RAM)
-#define GRAPH_H_S 38    // Small Graph Height (Disk/Net)
+// 圖表全域變數
+#define GRAPH_W 72      // 76px 面板 - 4px 內距 (每邊 2px)
+#define GRAPH_H_L 54    // 大圖表高度 (CPU/RAM)
+#define GRAPH_H_S 36    // 小圖表高度 (Disk/Net)
 
 float cpuHistory[GRAPH_W];
 float ramHistory[GRAPH_W];
@@ -60,24 +62,24 @@ unsigned long lastDataTime = 0;
 void setup() {
   Serial.begin(115200);
   
-  // Initialize Screen
+  // 初始化螢幕
   tft.init();
-  tft.setRotation(1); // Landscape (USB right) or 3 (USB left)
+  tft.setRotation(1); // 橫向 (USB 在右) 或 3 (USB 在左)
   tft.fillScreen(C_BG);
   tft.setTextDatum(TL_DATUM);
 
-  // Initialize Sprite for flicker-free graph
+  // 初始化 Sprite 以防止圖表閃爍
   largeSprite.createSprite(GRAPH_W, GRAPH_H_L);
   smallSprite.createSprite(GRAPH_W, GRAPH_H_S);
   
-  // Initialize History Buffer
+  // 初始化歷史緩衝區
   for(int i=0; i<GRAPH_W; i++) {
     cpuHistory[i] = 0; ramHistory[i] = 0;
     diskReadHistory[i] = 0; diskWriteHistory[i] = 0;
     netDlHistory[i] = 0; netUlHistory[i] = 0;
   }
 
-  // Draw Static Interface Layout
+  // 繪製靜態介面佈局
   drawStaticLayout();
 }
 
@@ -89,7 +91,7 @@ void loop() {
       lastDataTime = millis();
     }
   } else {
-    // Simulation Mode: If no data for 2 seconds, generate fake data
+    // 模擬模式：若 1 秒無數據，產生假數據
     if (millis() - lastDataTime > 1000) {
       simulateData();
       lastDataTime = millis();
@@ -98,7 +100,7 @@ void loop() {
 }
 
 void simulateData() {
-  // Create dummy JSON for testing UI
+  // 建立測試 UI 用的假 JSON
   String json = "{";
   json += "\"sys\":{\"date\":\"2025/1/18 (Sun)\",\"time\":\"14:30:05\"},";
   json += "\"cpu\":{\"load\":" + String(random(0, 101)) + ",\"temp\":" + String(random(0, 101)) + "},";
@@ -116,17 +118,17 @@ void drawStaticLayout() {
   int hTop = 25;
   int gap = P_GAP;
 
-  // Top Bar
-  // 320 - 2(margin)*2 - 4(gap)*3 = 304 width available.
-  // Distribute: 71, 52, 108, 73
+  // 頂部欄
+  // 5 個區塊：76, 76, 76, 36, 36。間距：4
   int x = P_MARGIN;
-  tft.fillRoundRect(x, yTop, 71, hTop, 4, C_PANEL); x += 71 + gap; // Date
-  tft.fillRoundRect(x, yTop, 52, hTop, 4, C_PANEL); x += 52 + gap; // Day
-  tft.fillRoundRect(x, yTop, 108, hTop, 4, C_PANEL); x += 108 + gap;// Time
-  tft.fillRoundRect(x, yTop, 73, hTop, 4, C_PANEL);                 // Status
+  tft.fillRoundRect(x, yTop, PANEL_WIDTH, hTop, 4, C_PANEL); x += PANEL_WIDTH + gap; // 日期
+  tft.fillRoundRect(x, yTop, PANEL_WIDTH, hTop, 4, C_PANEL); x += PANEL_WIDTH + gap; // 星期
+  tft.fillRoundRect(x, yTop, PANEL_WIDTH, hTop, 4, C_PANEL); x += PANEL_WIDTH + gap; // 時間
+  tft.fillRoundRect(x, yTop, PANEL_WIDTH_SMALL, hTop, 4, C_PANEL); x += 36 + gap; // 秒
+  tft.fillRoundRect(x, yTop, PANEL_WIDTH_SMALL, hTop, 4, C_PANEL);                // 狀態
 
-  // 4 Columns: CPU, RAM, Disk, Net
-  // Width 76, Gap 4. X: 2, 82, 162, 242
+  // 4 欄：CPU, RAM, Disk, Net
+  // 寬度 76，間距 4。X: 2, 82, 162, 242
   int yMain = yTop + hTop + gap;
   int hMain = SCREEN_H - yMain - P_MARGIN; // 170 - (2+25+4) - 2 = 137
   int wMain = 76;
@@ -137,41 +139,39 @@ void drawStaticLayout() {
   tft.fillRoundRect(x, yMain, wMain, hMain, 4, C_PANEL); x += wMain + gap; // Disk
   tft.fillRoundRect(x, yMain, wMain, hMain, 4, C_PANEL);                   // Net
 
-  // Labels
+  // 標籤
   tft.setTextColor(C_LABEL, C_PANEL);
   tft.setTextSize(1);
-  tft.setTextDatum(TC_DATUM);
+  tft.setTextDatum(TC_DATUM); // 置中
   
-  // Centers: 2+38=40, 82+38=120, 162+38=200, 242+38=280
+  // 中心點：2+38=40, 82+38=120, 162+38=200, 242+38=280
   int labelY = yMain + 4;
   tft.drawString("CPU", 40, labelY);
   tft.drawString("RAM", 120, labelY);
   tft.drawString("DISK", 200, labelY);
-  tft.drawString("NET", 280, labelY);
+  tft.drawString("NETWORK", 280, labelY);
 
-  tft.setTextDatum(TL_DATUM); // Reset
+  tft.setTextDatum(TL_DATUM); // 重置
 }
 
 void parseAndDisplay(String& json, bool isDataValid) {
-  JsonDocument doc; // ArduinoJson v7 handles size automatically
+  JsonDocument doc; // ArduinoJson v7 自動處理大小
   DeserializationError error = deserializeJson(doc, json);
 
   if (error) {
-    // Optional: Print error to serial for debugging
-    // Serial.print("JSON Error: "); Serial.println(error.c_str());
     return;
   }
 
-  // --- 1. Status Bar ---
+  // --- 1. 狀態欄 ---
   String fullDate = String((const char*)doc["sys"]["date"]);
   String timeStr = String((const char*)doc["sys"]["time"]);
 
-  // Parse Date & Day
+  // 解析日期與星期
   int spaceIdx = fullDate.indexOf(' ');
   String datePart = (spaceIdx > 0) ? fullDate.substring(0, spaceIdx) : fullDate;
   String dayPart = (spaceIdx > 0) ? fullDate.substring(spaceIdx + 1) : "";
 
-  // Format Date: YYYY/M/D -> MM/DD
+  // 格式化日期：YYYY/M/D -> MM/DD
   int firstSlash = datePart.indexOf('/');
   int lastSlash = datePart.lastIndexOf('/');
   String month = datePart.substring(firstSlash + 1, lastSlash);
@@ -180,10 +180,14 @@ void parseAndDisplay(String& json, bool isDataValid) {
   if (day.length() == 1) day = "0" + day;
   String mmdd = month + "/" + day;
 
-  // Format Day: (Sun) -> SUN
+  // 格式化星期：(Sun) -> SUN
   dayPart.replace("(", "");
   dayPart.replace(")", "");
   dayPart.toUpperCase();
+
+  // 分割時間
+  String hhmm = (timeStr.length() >= 5) ? timeStr.substring(0, 5) : timeStr;
+  String ss = (timeStr.length() >= 8) ? timeStr.substring(6) : "";
 
   tft.setTextColor(C_TEXT, C_PANEL);
   tft.setTextSize(2);
@@ -194,26 +198,29 @@ void parseAndDisplay(String& json, bool isDataValid) {
 
   if (mmdd != lastDate) {
     tft.setTextPadding(70);
-    tft.drawString(mmdd, 38, HEADER_STRING_Y); // Center of 2+71
+    tft.drawString(mmdd, 40, HEADER_STRING_Y); 
     lastDate = mmdd;
   }
   if (dayPart != lastDay) {
-    tft.setTextPadding(50);
-    tft.drawString(dayPart, 103, HEADER_STRING_Y); // Center of 77+52
+    tft.setTextPadding(70);
+    tft.drawString(dayPart, 120, HEADER_STRING_Y); 
     lastDay = dayPart;
   }
 
-  tft.setTextPadding(108);
-  tft.drawString(timeStr, 187, HEADER_STRING_Y); // Center of 133+108
+  tft.setTextPadding(70);
+  tft.drawString(hhmm, 200, HEADER_STRING_Y);
+  
+  tft.setTextPadding(30);
+  tft.drawString(ss, 260, HEADER_STRING_Y);
   tft.setTextPadding(0);
 
-  // Status Icon
+  // 狀態圖示
   uint16_t statusColor = isDataValid ? C_OK : C_WARN;
-  tft.fillCircle(282, 15, 5, statusColor); // Center of 245+73
+  tft.fillCircle(300, 15, 5, statusColor); 
   
-  tft.setTextDatum(TL_DATUM); // Reset
+  tft.setTextDatum(TL_DATUM); // 置左
 
-  // --- Data Parsing ---
+  // --- 資料解析 ---
   float cpuLoad = doc["cpu"]["load"];
   int cpuTemp = doc["cpu"]["temp"];
   float ramLoad = doc["ram"]["load"];
@@ -223,7 +230,7 @@ void parseAndDisplay(String& json, bool isDataValid) {
   float netDL = doc["net"]["dl"];
   float netUL = doc["net"]["ul"];
 
-  // Update Histories
+  // 更新歷史紀錄
   updateHistory(cpuHistory, cpuLoad);
   updateHistory(ramHistory, ramLoad);
   updateHistory(diskReadHistory, diskR);
@@ -231,30 +238,45 @@ void parseAndDisplay(String& json, bool isDataValid) {
   updateHistory(netDlHistory, netDL);
   updateHistory(netUlHistory, netUL);
 
-  // --- 2. CPU Column (x=2, w=76) ---
-  // Load
+  // 用來計算第二排文字的位置
+  int _x, _y;
+
+  // --- 2. CPU 欄 (x=2, w=76) ---
+  // 負載
+  if((int)cpuLoad > 99) cpuLoad = 99;
+  _y = 53;
+  _x = 55; // 數字與單位的分隔位置
   tft.setTextColor(C_CPU, C_PANEL);
-  tft.setTextDatum(TC_DATUM);
+  tft.setTextDatum(TR_DATUM);
   tft.setTextSize(3);
-  tft.fillRect(2, 51, 76, 25, C_PANEL);
-  tft.drawNumber((int)cpuLoad, 40, 51);
+  tft.fillRect(2, _y, PANEL_WIDTH, 25, C_PANEL); // TODO: 確認清除區域是否正確
+  tft.drawNumber((int)cpuLoad, _x, _y);
   tft.setTextSize(2);
-  tft.drawString("%", 65, 61);
+  tft.setTextDatum(TL_DATUM);
+  tft.drawString("%", _x, _y + 8);
   
-  // Temp
+  // 分隔線
+  tft.drawFastHLine(4, _y + 30, PANEL_WIDTH-4, C_GRID);
+
+  // 溫度
   uint16_t tempColor = (cpuTemp > 80) ? C_WARN : C_TEXT;
+  _y = 90;
+  _x = 48; // 數字與單位的分隔位置
   tft.setTextColor(tempColor, C_PANEL);
+  tft.setTextDatum(TR_DATUM);
   tft.setTextSize(2);
-  tft.fillRect(2, 81, 76, 20, C_PANEL);
-  tft.drawNumber(cpuTemp, 40, 81);
-  tft.drawCircle(62, 83, 2, tempColor);
-  tft.drawString("C", 66, 81);
+  tft.fillRect(2, _y, 76, 20, C_PANEL);  // TODO: 確認清除區域是否正確
+  tft.drawNumber(cpuTemp, _x - 3, _y);
+  tft.setTextDatum(TL_DATUM);
+  tft.drawString("C", _x + 5, _y);          
+  tft.drawCircle(_x, _y + 2 , 2, tempColor); 
 
-  // Graph
-  drawGraph(largeSprite, cpuHistory, 4, 108, C_CPU, 100);
+  // 圖表
+  drawGraph(largeSprite, cpuHistory, 4, 110, C_CPU, 100);
 
-  // --- 3. RAM Column (x=82, w=76) ---
-  // Load
+  // --- 3. RAM 欄 (x=82, w=76) ---
+  // 負載
+  if((int)ramLoad > 99) ramLoad = 99;
   tft.setTextColor(C_RAM, C_PANEL);
   tft.setTextDatum(TC_DATUM);
   tft.setTextSize(3);
@@ -263,7 +285,7 @@ void parseAndDisplay(String& json, bool isDataValid) {
   tft.setTextSize(2);
   tft.drawString("%", 144, 61);
 
-  // Used
+  // 已用
   tft.setTextColor(C_TEXT, C_PANEL);
   tft.setTextSize(2);
   tft.fillRect(82, 81, 76, 20, C_PANEL);
@@ -271,30 +293,30 @@ void parseAndDisplay(String& json, bool isDataValid) {
   tft.setTextSize(1);
   tft.drawString("GB", 148, 88);
 
-  // Graph
-  drawGraph(largeSprite, ramHistory, 84, 108, C_RAM, 100);
+  // 圖表
+  drawGraph(largeSprite, ramHistory, 84, 110, C_RAM, 100);
 
-  // --- 4. Disk Column (x=162, w=76) ---
-  // Center X = 162 + 38 = 200
+  // --- 4. Disk 欄 (x=162, w=76) ---
+  // 中心 X = 162 + 38 = 200
   tft.setTextColor(C_TEXT, C_PANEL);
   
-  // Read
-  drawMetric(diskR, 164, 45, false);
-  drawGraph(smallSprite, diskReadHistory, 164, 63, C_DISK, 0);
+  // 讀取
+  drawMetric(diskR, 164, 50, false);
+  drawGraph(smallSprite, diskReadHistory, 164, 68, C_DISK, 0);
 
-  // Write
-  drawMetric(diskW, 164, 103, true);
-  drawGraph(smallSprite, diskWriteHistory, 164, 121, C_DISK, 0);
+  // 寫入
+  drawMetric(diskW, 164, 110, true);
+  drawGraph(smallSprite, diskWriteHistory, 164, 128, C_DISK, 0);
 
-  // --- 5. Net Column (x=242, w=76) ---
-  // Center X = 242 + 38 = 280
-  // DL
-  drawMetric(netDL, 244, 45, false);
-  drawGraph(smallSprite, netDlHistory, 244, 63, C_NET, 0);
+  // --- 5. Net 欄 (x=242, w=76) ---
+  // 中心 X = 242 + 38 = 280
+  // 下載
+  drawMetric(netDL, 244, 50, false);
+  drawGraph(smallSprite, netDlHistory, 244, 68, C_NET, 0);
 
-  // UL
-  drawMetric(netUL, 244, 103, true);
-  drawGraph(smallSprite, netUlHistory, 244, 121, C_NET, 0);
+  // 上傳
+  drawMetric(netUL, 244, 110, true);
+  drawGraph(smallSprite, netUlHistory, 244, 128, C_NET, 0);
 }
 
 void updateHistory(float* history, float value) {
@@ -323,7 +345,7 @@ void drawGraph(TFT_eSprite &sprite, float* history, int x, int y, uint16_t color
   for (int i = 0; i < GRAPH_W - 1; i++) {
     int y1 = map((long)(history[i] * 10), 0, (long)(maxVal * 10), h - 1, 0);
     int y2 = map((long)(history[i + 1] * 10), 0, (long)(maxVal * 10), h - 1, 0);
-    // Clamp
+    // 限制範圍
     if (y1 < 0) y1 = 0; if (y1 >= h) y1 = h - 1;
     if (y2 < 0) y2 = 0; if (y2 >= h) y2 = h - 1;
     
@@ -351,25 +373,32 @@ void drawMetric(float valMB, int x, int y, bool isUp) {
   
   tft.setTextColor(C_TEXT, C_PANEL);
   
-  // Icon
+  // 圖示
   int ix = x + 2;
-  int iy = y + 4; // Vertically centered in 18px (18-10)/2 = 4
-  
+  int iy = y + 4; 
+  int _width = 8;
+  int _height = 8;
+
   if (isUp) {
-    // Up Triangle (Width 12, Height 10 - approx Font 2 size)
-    tft.fillTriangle(ix + 6, iy, ix, iy + 10, ix + 12, iy + 10, C_TEXT);
+    tft.fillTriangle(ix + _width/2, iy, 
+                     ix , iy + _height, 
+                     ix + _width, iy + _height, 
+                     C_TEXT);
   } else {
-    // Down Triangle
-    tft.fillTriangle(ix, iy, ix + 12, iy, ix + 6, iy + 10, C_TEXT);
+    // 倒三角形
+    tft.fillTriangle(ix , iy, 
+                     ix + _width, iy, 
+                     ix + _width/2, iy + _height, 
+                     C_TEXT);
   }
   
-  // Number
+  // 數字
   tft.setTextSize(2);
-  tft.setTextDatum(TR_DATUM);
-  tft.drawNumber(valInt, x + 48, y); 
+  tft.setTextDatum(TR_DATUM); // 置右
+  tft.drawNumber(valInt, x + 52, y); 
   
-  // Unit
-  tft.setTextSize(1);
-  tft.setTextDatum(TL_DATUM);
-  tft.drawString(unit, x + 50, y + 5); 
+  // 單位
+  tft.setTextSize(1); 
+  tft.setTextDatum(TL_DATUM); // 置左
+  tft.drawString(unit, x + 54, y + 8); 
 }
