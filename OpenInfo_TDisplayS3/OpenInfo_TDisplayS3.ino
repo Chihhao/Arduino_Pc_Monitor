@@ -61,7 +61,6 @@ float netUlHistory[GRAPH_W];
 
 unsigned long lastDataTime = 0;
 
-
 void setup() {
   Serial.setRxBufferSize(2048); // 加大接收緩衝區，防止高速數據溢出
   Serial.begin(115200); // 改為標準 115200，對於 10FPS 數據量已足夠且相容性更好 (電腦端需對應修改)
@@ -222,61 +221,61 @@ void parseAndDisplay(String& json, bool isDataValid) {
     String timeStr = String((const char*)doc["sys"]["time"]);
 
     // 解析日期與星期
-  int spaceIdx = fullDate.indexOf(' ');
-  String datePart = (spaceIdx > 0) ? fullDate.substring(0, spaceIdx) : fullDate;
-  String dayPart = (spaceIdx > 0) ? fullDate.substring(spaceIdx + 1) : "";
+    int spaceIdx = fullDate.indexOf(' ');
+    String datePart = (spaceIdx > 0) ? fullDate.substring(0, spaceIdx) : fullDate;
+    String dayPart = (spaceIdx > 0) ? fullDate.substring(spaceIdx + 1) : "";
 
-  // 格式化日期：YYYY/M/D -> MM/DD
-  int firstSlash = datePart.indexOf('/');
-  int lastSlash = datePart.lastIndexOf('/');
-  String month = datePart.substring(firstSlash + 1, lastSlash);
-  String day = datePart.substring(lastSlash + 1);
-  if (month.length() == 1) month = "0" + month;
-  if (day.length() == 1) day = "0" + day;
-  String mmdd = month + "/" + day;
+    // 格式化日期：YYYY/M/D -> MM/DD
+    int firstSlash = datePart.indexOf('/');
+    int lastSlash = datePart.lastIndexOf('/');
+    String month = datePart.substring(firstSlash + 1, lastSlash);
+    String day = datePart.substring(lastSlash + 1);
+    if (month.length() == 1) month = "0" + month;
+    if (day.length() == 1) day = "0" + day;
+    String mmdd = month + "/" + day;
 
-  // 格式化星期：(Sun) -> SUN
-  dayPart.replace("(", "");
-  dayPart.replace(")", "");
-  dayPart.toUpperCase();
+    // 格式化星期：(Sun) -> SUN
+    dayPart.replace("(", "");
+    dayPart.replace(")", "");
+    dayPart.toUpperCase();
 
-  // 分割時間
-  String hhmm = (timeStr.length() >= 5) ? timeStr.substring(0, 5) : timeStr;
-  String ss = (timeStr.length() >= 8) ? timeStr.substring(6) : "";
+    // 分割時間
+    String hhmm = (timeStr.length() >= 5) ? timeStr.substring(0, 5) : timeStr;
+    String ss = (timeStr.length() >= 8) ? timeStr.substring(6) : "";
 
-  tft.setTextColor(C_TEXT, C_PANEL);
-  tft.setTextSize(2);
-  tft.setTextDatum(MC_DATUM);
+    tft.setTextColor(C_TEXT, C_PANEL);
+    tft.setTextSize(2);
+    tft.setTextDatum(MC_DATUM);
 
-  static String lastDate = "";
-  static String lastDay = "";
+    static String lastDate = "";
+    static String lastDay = "";
 
-  if (mmdd != lastDate) {
+    if (mmdd != lastDate) {
+      tft.setTextPadding(70);
+      tft.drawString(mmdd, 41, HEADER_STRING_Y); 
+      lastDate = mmdd;
+    }
+    if (dayPart != lastDay) {
+      tft.setTextPadding(70);
+      tft.drawString(dayPart, 121, HEADER_STRING_Y); 
+      lastDay = dayPart;
+    }
+
     tft.setTextPadding(70);
-    tft.drawString(mmdd, 41, HEADER_STRING_Y); 
-    lastDate = mmdd;
-  }
-  if (dayPart != lastDay) {
-    tft.setTextPadding(70);
-    tft.drawString(dayPart, 121, HEADER_STRING_Y); 
-    lastDay = dayPart;
-  }
+    tft.drawString(hhmm, 201, HEADER_STRING_Y);
+    
+    tft.setTextPadding(30);
+    tft.drawString(ss, 261, HEADER_STRING_Y);
+    tft.setTextPadding(0);
 
-  tft.setTextPadding(70);
-  tft.drawString(hhmm, 201, HEADER_STRING_Y);
-  
-  tft.setTextPadding(30);
-  tft.drawString(ss, 261, HEADER_STRING_Y);
-  tft.setTextPadding(0);
+    // 狀態圖示
+    uint16_t statusColor = isDataValid ? C_OK : C_WARN;
+    tft.fillCircle(300, 14, 5, statusColor); 
+    
+    tft.setTextDatum(TL_DATUM); // 置左
 
-  // 狀態圖示
-  uint16_t statusColor = isDataValid ? C_OK : C_WARN;
-  tft.fillCircle(300, 14, 5, statusColor); 
-  
-  tft.setTextDatum(TL_DATUM); // 置左
-
-  // 用來計算第二排文字的位置
-  int _x, _y;
+    // 用來計算第二排文字的位置
+    int _x, _y;
 
     // --- CPU 文字 ---
     // CPU 溫度
@@ -312,7 +311,7 @@ void parseAndDisplay(String& json, bool isDataValid) {
     tft.drawString("%", _x, _y + 8);
 
     // --- RAM 文字 ---
-    // 已用 RAM (移至上方)
+    // 已用 RAM
     _y = 50;
     _x = 138; 
     tft.setTextColor(C_TEXT, C_PANEL);
@@ -327,7 +326,7 @@ void parseAndDisplay(String& json, bool isDataValid) {
     // 分隔線
     tft.drawFastHLine(84, _y + 18, PANEL_WIDTH-4, C_GRID);
 
-    // RAM Load (移至下方)
+    // RAM Load
     float dispRamLoad = ramLoad;
     if((int)dispRamLoad > 99) dispRamLoad = 99;
     uint16_t ramColor = C_RAM;
@@ -344,12 +343,12 @@ void parseAndDisplay(String& json, bool isDataValid) {
     tft.drawString("%", _x, _y + 8);
 
     // --- Disk 文字 ---
-  drawMetric(diskR, 164, 50, false);
-  drawMetric(diskW, 164, 110, true);
+    drawMetric(diskR, 164, 50, false);
+    drawMetric(diskW, 164, 110, true);
 
     // --- Net 文字 ---
-  drawMetric(netDL, 244, 50, false);
-  drawMetric(netUL, 244, 110, true);
+    drawMetric(netDL, 244, 50, false);
+    drawMetric(netUL, 244, 110, true);
   }
 
   // --- 2. 圖表更新 (每一幀都更新) ---
