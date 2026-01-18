@@ -238,7 +238,7 @@ void parseAndDisplay(String& json, bool isDataValid) {
   tft.setTextSize(3);
   tft.fillRect(2, 51, 76, 25, C_PANEL);
   tft.drawNumber((int)cpuLoad, 40, 51);
-  tft.setTextSize(1);
+  tft.setTextSize(2);
   tft.drawString("%", 65, 61);
   
   // Temp
@@ -247,7 +247,8 @@ void parseAndDisplay(String& json, bool isDataValid) {
   tft.setTextSize(2);
   tft.fillRect(2, 81, 76, 20, C_PANEL);
   tft.drawNumber(cpuTemp, 40, 81);
-  tft.drawString("C", 65, 81);
+  tft.drawCircle(62, 83, 2, tempColor);
+  tft.drawString("C", 66, 81);
 
   // Graph
   drawGraph(largeSprite, cpuHistory, 4, 108, C_CPU, 100);
@@ -259,7 +260,7 @@ void parseAndDisplay(String& json, bool isDataValid) {
   tft.setTextSize(3);
   tft.fillRect(82, 51, 76, 25, C_PANEL);
   tft.drawNumber((int)ramLoad, 120, 51);
-  tft.setTextSize(1);
+  tft.setTextSize(2);
   tft.drawString("%", 144, 61);
 
   // Used
@@ -274,30 +275,42 @@ void parseAndDisplay(String& json, bool isDataValid) {
   drawGraph(largeSprite, ramHistory, 84, 108, C_RAM, 100);
 
   // --- 4. Disk Column (x=162, w=76) ---
-  tft.setTextDatum(TL_DATUM);
+  // Center X = 162 + 38 = 200
   tft.setTextColor(C_TEXT, C_PANEL);
-  tft.setTextSize(1);
   
   // Read
-  tft.fillRect(164, 45, 72, 15, C_PANEL);
-  tft.drawString("R: " + String(diskR, 1), 164, 45);
-  drawGraph(smallSprite, diskReadHistory, 164, 60, C_DISK, 0);
+  tft.fillRect(164, 45, 72, 18, C_PANEL);
+  tft.setTextDatum(TR_DATUM); tft.setTextSize(2);
+  tft.drawString(String(diskR, 1), 215, 45);
+  tft.setTextDatum(TL_DATUM); tft.setTextSize(1);
+  tft.drawString("MB", 217, 50);
+  drawGraph(smallSprite, diskReadHistory, 164, 63, C_DISK, 0);
 
   // Write
-  tft.fillRect(164, 100, 72, 15, C_PANEL);
-  tft.drawString("W: " + String(diskW, 1), 164, 100);
-  drawGraph(smallSprite, diskWriteHistory, 164, 115, C_DISK, 0);
+  tft.fillRect(164, 103, 72, 18, C_PANEL);
+  tft.setTextDatum(TR_DATUM); tft.setTextSize(2);
+  tft.drawString(String(diskW, 1), 215, 103);
+  tft.setTextDatum(TL_DATUM); tft.setTextSize(1);
+  tft.drawString("MB", 217, 108);
+  drawGraph(smallSprite, diskWriteHistory, 164, 121, C_DISK, 0);
 
   // --- 5. Net Column (x=242, w=76) ---
+  // Center X = 242 + 38 = 280
   // DL
-  tft.fillRect(244, 45, 72, 15, C_PANEL);
-  tft.drawString("D: " + String(netDL, 1), 244, 45);
-  drawGraph(smallSprite, netDlHistory, 244, 60, C_NET, 0);
+  tft.fillRect(244, 45, 72, 18, C_PANEL);
+  tft.setTextDatum(TR_DATUM); tft.setTextSize(2);
+  tft.drawString(String(netDL, 1), 295, 45);
+  tft.setTextDatum(TL_DATUM); tft.setTextSize(1);
+  tft.drawString("MB", 297, 50);
+  drawGraph(smallSprite, netDlHistory, 244, 63, C_NET, 0);
 
   // UL
-  tft.fillRect(244, 100, 72, 15, C_PANEL);
-  tft.drawString("U: " + String(netUL, 1), 244, 100);
-  drawGraph(smallSprite, netUlHistory, 244, 115, C_NET, 0);
+  tft.fillRect(244, 103, 72, 18, C_PANEL);
+  tft.setTextDatum(TR_DATUM); tft.setTextSize(2);
+  tft.drawString(String(netUL, 1), 295, 103);
+  tft.setTextDatum(TL_DATUM); tft.setTextSize(1);
+  tft.drawString("MB", 297, 108);
+  drawGraph(smallSprite, netUlHistory, 244, 121, C_NET, 0);
 }
 
 void updateHistory(float* history, float value) {
@@ -312,7 +325,9 @@ void drawGraph(TFT_eSprite &sprite, float* history, int x, int y, uint16_t color
   int h = sprite.height();
   
   sprite.fillSprite(C_PANEL);
+  sprite.drawFastHLine(0, 0, w, C_GRID);
   sprite.drawFastHLine(0, h/2, w, C_GRID);
+  sprite.drawFastHLine(0, h-1, w, C_GRID);
 
   float maxVal = 1.0;
   if (maxValOverride > 0) {
