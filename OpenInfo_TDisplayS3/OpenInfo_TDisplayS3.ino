@@ -20,17 +20,20 @@
 
 // 顏色
 #define C_BG TFT_BLACK
-#define C_PANEL 0x18E3 // 深灰 (RGB565)
+#define C_PANEL 0x18E3 // 深灰
 #define C_TEXT TFT_WHITE
 #define C_LABEL 0x9CD3 // 淺灰
 #define C_ACCENT 0x067F // 青色
 #define C_WARN 0xF800   // 紅色
 #define C_OK 0x07E0     // 綠色
 #define C_GRID 0x2124   // 較深的灰色
-#define C_CPU 0x067F    // 青色
-#define C_RAM 0xF81F    // 洋紅
-#define C_DISK 0xFFE0   // 黃色
-#define C_NET 0x07E0    // 綠色
+
+// 統一色系設定
+#define C_THEME 0xCE40  // 主色調：暗黃色
+#define C_CPU C_THEME
+#define C_RAM C_THEME
+#define C_DISK C_THEME
+#define C_NET C_THEME
 
 // 物件
 TFT_eSPI tft = TFT_eSPI(); 
@@ -244,9 +247,13 @@ void parseAndDisplay(String& json, bool isDataValid) {
   // --- 2. CPU 欄 (x=2, w=76) ---
   // 負載
   if((int)cpuLoad > 99) cpuLoad = 99;
+  
+  // 判斷是否需要警示 (負載 > 90% 變紅)
+  uint16_t cpuColor = C_CPU;
+
   _y = 53;
   _x = 55; // 數字與單位的分隔位置
-  tft.setTextColor(C_CPU, C_PANEL);
+  tft.setTextColor(cpuColor, C_PANEL);
   tft.setTextDatum(TR_DATUM);
   tft.setTextSize(3);
   tft.fillRect(2, _y, PANEL_WIDTH, 25, C_PANEL); // TODO: 確認清除區域是否正確
@@ -272,14 +279,18 @@ void parseAndDisplay(String& json, bool isDataValid) {
   tft.drawCircle(_x, _y + 2 , 2, tempColor); 
 
   // 圖表
-  drawGraph(largeSprite, cpuHistory, 4, 110, C_CPU, 100);
+  drawGraph(largeSprite, cpuHistory, 4, 110, cpuColor, 100);
 
   // --- 3. RAM 欄 (x=82, w=76) ---
   // 負載
   if((int)ramLoad > 99) ramLoad = 99;
+
+  // 判斷是否需要警示 (負載 > 90% 變紅)
+  uint16_t ramColor = C_RAM;
+
   _y = 53;
   _x = 135; // 82 + 53
-  tft.setTextColor(C_RAM, C_PANEL);
+  tft.setTextColor(ramColor, C_PANEL);
   tft.setTextDatum(TR_DATUM);
   tft.setTextSize(3);
   tft.fillRect(82, _y, PANEL_WIDTH, 25, C_PANEL);
@@ -304,7 +315,7 @@ void parseAndDisplay(String& json, bool isDataValid) {
   tft.drawString("GB", _x + 2, _y + 8);
 
   // 圖表
-  drawGraph(largeSprite, ramHistory, 84, 110, C_RAM, 100);
+  drawGraph(largeSprite, ramHistory, 84, 110, ramColor, 100);
 
   // --- 4. Disk 欄 (x=162, w=76) ---
   // 中心 X = 162 + 38 = 200
