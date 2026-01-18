@@ -63,7 +63,7 @@ unsigned long lastDataTime = 0;
 
 
 void setup() {
-  Serial.begin(115200);
+  Serial.begin(921600); // 提高傳輸速率以減少延遲 (電腦端也需對應修改)
   
   // 初始化螢幕
   tft.init();
@@ -94,8 +94,8 @@ void loop() {
       lastDataTime = millis();
     }
   } else {
-    // 模擬模式：若 1 秒無數據，產生假數據
-    if (millis() - lastDataTime > 1000) {
+    // 模擬模式：改為 100ms (10 FPS)
+    if (millis() - lastDataTime > 100) {
       simulateData();
       lastDataTime = millis();
     }
@@ -112,14 +112,15 @@ void simulateData() {
   static float valNetUl = 0;
 
   // 模擬數據波動 (Random Walk)
-  valCpu += random(-5, 6);
+  // 為了配合 10 FPS，將變化幅度改小，讓動畫更平滑
+  valCpu += random(-2, 3);
   if (valCpu < 0) valCpu = 0; if (valCpu > 100) valCpu = 100;
 
   // 溫度跟隨負載緩慢變化
   int targetTemp = 35 + (valCpu / 2);
   if (valTemp < targetTemp) valTemp++; else if (valTemp > targetTemp) valTemp--;
 
-  valRam += random(-2, 3);
+  valRam += random(-1, 2);
   if (valRam < 10) valRam = 10; if (valRam > 98) valRam = 98;
 
   // 網路與硬碟偶爾突波，其餘時間衰退
@@ -190,11 +191,36 @@ void parseAndDisplay(String& json, bool isDataValid) {
     return;
   }
 
-  // --- 1. 狀態欄 ---
-  String fullDate = String((const char*)doc["sys"]["date"]);
-  String timeStr = String((const char*)doc["sys"]["time"]);
+  // --- 0. 預先解析數據 (供圖表與文字使用) ---
+  float cpuLoad = doc["cpu"]["load"];
+  int cpuTemp = doc["cpu"]["temp"];
+  float ramLoad = doc["ram"]["load"];
+  float ramUsed = doc["ram"]["used"];
+  float diskR = doc["disk"]["read"] | 0.0;
+  float diskW = doc["disk"]["write"] | 0.0;
+  float netDL = doc["net"]["dl"];
+  float netUL = doc["net"]["ul"];
 
-  // 解析日期與星期
+  // 更新歷史紀錄 (每一幀都更新，保持 10 FPS 流暢度)
+  updateHistory(cpuHistory, cpuLoad);
+  updateHistory(ramHistory, ramLoad);
+  updateHistory(diskReadHistory, diskR);
+  updateHistory(diskWriteHistory, diskW);
+  updateHistory(netDlHistory, netDL);
+  updateHistory(netUlHistory, netUL);
+
+  // --- 1. 文字更新 (限制 1 FPS) ---
+  static unsigned long lastTextUpdate = 0;
+  bool updateText = (millis() - lastTextUpdate > 1000);
+  
+  if (updateText) {
+    lastTextUpdate = millis();
+
+    // --- 狀態欄 ---
+    String fullDate = String((const char*)doc["sys"]["date"]);
+    String timeStr = String((const char*)doc["sys"]["time"]);
+
+    // 解析日期與星期
   int spaceIdx = fullDate.indexOf(' ');
   String datePart = (spaceIdx > 0) ? fullDate.substring(0, spaceIdx) : fullDate;
   String dayPart = (spaceIdx > 0) ? fullDate.substring(spaceIdx + 1) : "";
@@ -248,33 +274,13 @@ void parseAndDisplay(String& json, bool isDataValid) {
   
   tft.setTextDatum(TL_DATUM); // 置左
 
-  // --- 資料解析 ---
-  float cpuLoad = doc["cpu"]["load"];
-  int cpuTemp = doc["cpu"]["temp"];
-  float ramLoad = doc["ram"]["load"];
-  float ramUsed = doc["ram"]["used"];
-  float diskR = doc["disk"]["read"] | 0.0;
-  float diskW = doc["disk"]["write"] | 0.0;
-  float netDL = doc["net"]["dl"];
-  float netUL = doc["net"]["ul"];
-
-  // 更新歷史紀錄
-  updateHistory(cpuHistory, cpuLoad);
-  updateHistory(ramHistory, ramLoad);
-  updateHistory(diskReadHistory, diskR);
-  updateHistory(diskWriteHistory, diskW);
-  updateHistory(netDlHistory, netDL);
-  updateHistory(netUlHistory, netUL);
-
   // 用來計算第二排文字的位置
   int _x, _y;
 
-  // --- 2. CPU 欄 (x=2, w=76) ---
-  // 負載
-  if((int)cpuLoad > 99) cpuLoad = 99;
-  
-  // 判斷是否需要警示 (負載 > 90% 變紅)
-  uint16_t cpuColor = C_CPU;
+    // --- CPU 文字 ---
+    float dispCpuLoad = cpuLoad;
+    if((int)dispCpuLoad > 99) dispCpuLoad = 99;
+    uint16_t cpuColor = C_CPU;
 
   _y = 53;
   _x = 55; // 數字與單位的分隔位置
@@ -282,7 +288,7 @@ void parseAndDisplay(String& json, bool isDataValid) {
   tft.setTextDatum(TR_DATUM);
   tft.setTextSize(3);
   tft.fillRect(2, _y, PANEL_WIDTH, 25, C_PANEL); // TODO: 確認清除區域是否正確
-  tft.drawNumber((int)cpuLoad, _x, _y);
+    tft.drawNumber((int)dispCpuLoad, _x, _y);
   tft.setTextSize(2);
   tft.setTextDatum(TL_DATUM);
   tft.drawString("%", _x, _y + 8);
@@ -303,15 +309,10 @@ void parseAndDisplay(String& json, bool isDataValid) {
   tft.drawString("C", _x + 5, _y);          
   tft.drawCircle(_x, _y + 2 , 2, tempColor); 
 
-  // 圖表
-  drawGraph(largeSprite, cpuHistory, 4, 110, cpuColor, 100);
-
-  // --- 3. RAM 欄 (x=82, w=76) ---
-  // 負載
-  if((int)ramLoad > 99) ramLoad = 99;
-
-  // 判斷是否需要警示 (負載 > 90% 變紅)
-  uint16_t ramColor = C_RAM;
+    // --- RAM 文字 ---
+    float dispRamLoad = ramLoad;
+    if((int)dispRamLoad > 99) dispRamLoad = 99;
+    uint16_t ramColor = C_RAM;
 
   _y = 53;
   _x = 135; // 82 + 53
@@ -319,7 +320,7 @@ void parseAndDisplay(String& json, bool isDataValid) {
   tft.setTextDatum(TR_DATUM);
   tft.setTextSize(3);
   tft.fillRect(82, _y, PANEL_WIDTH, 25, C_PANEL);
-  tft.drawNumber((int)ramLoad, _x, _y);
+    tft.drawNumber((int)dispRamLoad, _x, _y);
   tft.setTextSize(2);
   tft.setTextDatum(TL_DATUM);
   tft.drawString("%", _x, _y + 8);
@@ -339,29 +340,21 @@ void parseAndDisplay(String& json, bool isDataValid) {
   tft.setTextDatum(TL_DATUM);
   tft.drawString("GB", _x + 2, _y + 8);
 
-  // 圖表
-  drawGraph(largeSprite, ramHistory, 84, 110, ramColor, 100);
-
-  // --- 4. Disk 欄 (x=162, w=76) ---
-  // 中心 X = 162 + 38 = 200
-  tft.setTextColor(C_TEXT, C_PANEL);
-  
-  // 讀取
+    // --- Disk 文字 ---
   drawMetric(diskR, 164, 50, false);
-  drawGraph(smallSprite, diskReadHistory, 164, 68, C_DISK, 0);
-
-  // 寫入
   drawMetric(diskW, 164, 110, true);
-  drawGraph(smallSprite, diskWriteHistory, 164, 128, C_DISK, 0);
 
-  // --- 5. Net 欄 (x=242, w=76) ---
-  // 中心 X = 242 + 38 = 280
-  // 下載
+    // --- Net 文字 ---
   drawMetric(netDL, 244, 50, false);
-  drawGraph(smallSprite, netDlHistory, 244, 68, C_NET, 0);
-
-  // 上傳
   drawMetric(netUL, 244, 110, true);
+  }
+
+  // --- 2. 圖表更新 (每一幀都更新) ---
+  drawGraph(largeSprite, cpuHistory, 4, 110, C_CPU, 100);
+  drawGraph(largeSprite, ramHistory, 84, 110, C_RAM, 100);
+  drawGraph(smallSprite, diskReadHistory, 164, 68, C_DISK, 0);
+  drawGraph(smallSprite, diskWriteHistory, 164, 128, C_DISK, 0);
+  drawGraph(smallSprite, netDlHistory, 244, 68, C_NET, 0);
   drawGraph(smallSprite, netUlHistory, 244, 128, C_NET, 0);
 }
 
@@ -393,19 +386,25 @@ void drawGraph(TFT_eSprite &sprite, float* history, int x, int y, uint16_t color
     int valY = map((long)(history[i] * 10), 0, (long)(maxVal * 10), h - 1, 0);
     if (valY < 0) valY = 0; if (valY >= h) valY = h - 1;
 
+    int graphHeight = h - valY;
+
     // 從數值高度向下畫到底部
     for (int row = valY; row < h; row++) {
-       // 計算透明度：頂部(靠近線條)較不透明(180)，底部完全透明(0)
-       int alpha = 0;
-       if (h > valY) {
-         alpha = 180 - (180 * (row - valY) / (h - valY));
-       }
-       if (alpha < 0) alpha = 0;
+       // 優化：直接判斷背景色，不使用 readPixel
+       // 格線位置：0, h/2, h-1
+       uint16_t bg = (row == 0 || row == h/2 || row == h-1) ? C_GRID : C_PANEL;
 
-       // 讀取目前的背景像素 (包含格線)，進行混合
-       uint16_t bg = sprite.readPixel(i, row);
-       uint16_t blended = tft.alphaBlend(alpha, color, bg);
-       sprite.drawPixel(i, row, blended);
+       // 計算透明度
+       int alpha = 0;
+       if (graphHeight > 0) {
+         alpha = 180 - (180 * (row - valY) / graphHeight);
+       }
+       
+       // 只有當 alpha > 0 才需要繪製 (避免無謂的寫入)
+       if (alpha > 0) {
+         uint16_t blended = tft.alphaBlend(alpha, color, bg);
+         sprite.drawPixel(i, row, blended);
+       }
     }
   }
 
