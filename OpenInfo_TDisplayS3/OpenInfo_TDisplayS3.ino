@@ -103,13 +103,38 @@ void loop() {
 }
 
 void simulateData() {
+  static int valCpu = 20;
+  static int valTemp = 40;
+  static int valRam = 30;
+  static float valDiskR = 0;
+  static float valDiskW = 0;
+  static float valNetDl = 0;
+  static float valNetUl = 0;
+
+  // 模擬數據波動 (Random Walk)
+  valCpu += random(-5, 6);
+  if (valCpu < 0) valCpu = 0; if (valCpu > 100) valCpu = 100;
+
+  // 溫度跟隨負載緩慢變化
+  int targetTemp = 35 + (valCpu / 2);
+  if (valTemp < targetTemp) valTemp++; else if (valTemp > targetTemp) valTemp--;
+
+  valRam += random(-2, 3);
+  if (valRam < 10) valRam = 10; if (valRam > 98) valRam = 98;
+
+  // 網路與硬碟偶爾突波，其餘時間衰退
+  if (random(100) > 90) valDiskR = random(5, 80); else valDiskR *= 0.7;
+  if (random(100) > 90) valDiskW = random(5, 80); else valDiskW *= 0.7;
+  if (random(100) > 85) valNetDl = random(2, 60); else valNetDl *= 0.8;
+  if (random(100) > 85) valNetUl = random(1, 20); else valNetUl *= 0.8;
+
   // 建立測試 UI 用的假 JSON
   String json = "{";
   json += "\"sys\":{\"date\":\"2025/1/18 (Sun)\",\"time\":\"14:30:05\"},";
-  json += "\"cpu\":{\"load\":" + String(random(0, 101)) + ",\"temp\":" + String(random(0, 101)) + "},";
-  json += "\"ram\":{\"load\":" + String(random(0, 101)) + ",\"used\":22.5,\"total\":32.0},";
-  json += "\"disk\":{\"read\":" + String(random(0, 101)) + ",\"write\":" + String(random(0, 101)) + "},";
-  json += "\"net\":{\"dl\":" + String(random(0, 1001)/10.0) + ",\"ul\":" + String(random(0, 1001)/10.0) + "}";
+  json += "\"cpu\":{\"load\":" + String(valCpu) + ",\"temp\":" + String(valTemp) + "},";
+  json += "\"ram\":{\"load\":" + String(valRam) + ",\"used\":22.5,\"total\":32.0},";
+  json += "\"disk\":{\"read\":" + String(valDiskR, 1) + ",\"write\":" + String(valDiskW, 1) + "},";
+  json += "\"net\":{\"dl\":" + String(valNetDl, 1) + ",\"ul\":" + String(valNetUl, 1) + "}";
   json += "}";
   parseAndDisplay(json, false);
 }
