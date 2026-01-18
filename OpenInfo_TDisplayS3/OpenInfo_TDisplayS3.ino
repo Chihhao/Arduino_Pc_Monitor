@@ -388,6 +388,28 @@ void drawGraph(TFT_eSprite &sprite, float* history, int x, int y, uint16_t color
     for(int i=0; i<GRAPH_W; i++) if(history[i] > maxVal) maxVal = history[i];
   }
 
+  // 1. 繪製區域填充 (Area Fill Gradient)
+  for (int i = 0; i < GRAPH_W; i++) {
+    int valY = map((long)(history[i] * 10), 0, (long)(maxVal * 10), h - 1, 0);
+    if (valY < 0) valY = 0; if (valY >= h) valY = h - 1;
+
+    // 從數值高度向下畫到底部
+    for (int row = valY; row < h; row++) {
+       // 計算透明度：頂部(靠近線條)較不透明(180)，底部完全透明(0)
+       int alpha = 0;
+       if (h > valY) {
+         alpha = 180 - (180 * (row - valY) / (h - valY));
+       }
+       if (alpha < 0) alpha = 0;
+
+       // 讀取目前的背景像素 (包含格線)，進行混合
+       uint16_t bg = sprite.readPixel(i, row);
+       uint16_t blended = tft.alphaBlend(alpha, color, bg);
+       sprite.drawPixel(i, row, blended);
+    }
+  }
+
+  // 2. 繪製頂部線條 (Line) - 保持銳利
   for (int i = 0; i < GRAPH_W - 1; i++) {
     int y1 = map((long)(history[i] * 10), 0, (long)(maxVal * 10), h - 1, 0);
     int y2 = map((long)(history[i + 1] * 10), 0, (long)(maxVal * 10), h - 1, 0);
