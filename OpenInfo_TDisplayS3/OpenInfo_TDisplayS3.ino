@@ -18,6 +18,8 @@
 #define SCREEN_W 320
 #define SCREEN_H 170
 
+#define PIN_BTN 0 // 板載 Boot 按鈕
+
 // 顏色
 #define C_BG TFT_BLACK
 #define C_PANEL 0x18E3 // 深灰
@@ -47,16 +49,17 @@ TFT_eSprite bgSprite = TFT_eSprite(&tft); // 新增全螢幕緩衝區
 #define PANEL_WIDTH_SMALL 36
 
 // 圖表全域變數
-#define GRAPH_W 72      // 76px 面板 - 4px 內距 (每邊 2px)
+#define HISTORY_LEN 320 // 擴大歷史紀錄至全螢幕寬度
+#define DASH_GRAPH_W 72 // Dashboard 小圖表寬度
 #define GRAPH_H_L 58    // 大圖表高度 (CPU/RAM)
 #define GRAPH_H_S 36    // 小圖表高度 (Disk/Net)
 
-float cpuHistory[GRAPH_W];
-float ramHistory[GRAPH_W];
-float diskReadHistory[GRAPH_W];
-float diskWriteHistory[GRAPH_W];
-float netDlHistory[GRAPH_W];
-float netUlHistory[GRAPH_W];
+float cpuHistory[HISTORY_LEN];
+float ramHistory[HISTORY_LEN];
+float diskReadHistory[HISTORY_LEN];
+float diskWriteHistory[HISTORY_LEN];
+float netDlHistory[HISTORY_LEN];
+float netUlHistory[HISTORY_LEN];
 
 #define HEADER_STRING_Y 15
 
@@ -66,6 +69,8 @@ void setup() {
   Serial.setRxBufferSize(2048); // 加大接收緩衝區，防止高速數據溢出
   Serial.begin(115200); // 改為標準 115200，對於 10FPS 數據量已足夠且相容性更好 (電腦端需對應修改)
   
+  pinMode(PIN_BTN, INPUT_PULLUP); // 初始化按鈕
+  
   // 初始化螢幕
   tft.init();
   tft.setRotation(1); // 橫向 (USB 在右) 或 3 (USB 在左)
@@ -74,11 +79,11 @@ void setup() {
 
   // 初始化 Sprite 以防止圖表閃爍
   bgSprite.createSprite(SCREEN_W, SCREEN_H); // 建立全螢幕緩衝區
-  largeSprite.createSprite(GRAPH_W, GRAPH_H_L);
-  smallSprite.createSprite(GRAPH_W, GRAPH_H_S);
+  largeSprite.createSprite(DASH_GRAPH_W, GRAPH_H_L);
+  smallSprite.createSprite(DASH_GRAPH_W, GRAPH_H_S);
   
   // 初始化歷史緩衝區
-  for(int i=0; i<GRAPH_W; i++) {
+  for(int i=0; i<HISTORY_LEN; i++) {
     cpuHistory[i] = 0; ramHistory[i] = 0;
     diskReadHistory[i] = 0; diskWriteHistory[i] = 0;
     netDlHistory[i] = 0; netUlHistory[i] = 0;
@@ -141,8 +146,28 @@ void simulateData() {
   parseAndDisplay(json, false);
 }
 
-void drawStaticLayout() {
-  bgSprite.fillScreen(C_BG); // 改為清除緩衝區
+// 全域變數儲存格式化後的文字，供不同頁面共用
+String s_mmdd = "--/--";
+String s_dayPart = "---";
+String s_hhmm = "--:--";
+String s_ss = "--";
+uint16_t s_statusColor = C_WARN;
+int s_cpuTemp = 0;
+uint16_t s_tempColor = C_TEXT;
+int s_cpuLoad = 0;
+float s_ramUsed = 0;
+int s_ramLoad = 0;
+float s_diskR = 0;
+float s_diskW = 0;
+float s_netDL = 0;
+float s_netUL = 0;
+
+int currentPage = 0; // 0: Dashboard, 1: Clock, 2: Big Graph
+
+// --- 頁面 1: Dashboard 繪圖邏輯 ---
+void drawDashboard(bool isDataValid) {
+  // 繪製靜態佈局
+  // bgSprite.fillScreen(C_BG); // 已經在主迴圈清除過了
 
   int yTop = P_MARGIN;
   int hTop = 25;
@@ -182,108 +207,8 @@ void drawStaticLayout() {
   bgSprite.drawString("NETWORK", 280, labelY);
 
   bgSprite.setTextDatum(TL_DATUM); // 重置
-}
 
-void parseAndDisplay(String& json, bool isDataValid) {
-  JsonDocument doc; // ArduinoJson v7 自動處理大小
-  DeserializationError error = deserializeJson(doc, json);
-
-  if (error) {
-    return;
-  }
-
-  // --- 每一幀都重繪背景與靜態佈局 (雙重緩衝) ---
-  drawStaticLayout();
-
-  // --- 0. 預先解析數據 (供圖表與文字使用) ---
-  float cpuLoad = doc["cpu"]["load"];
-  int cpuTemp = doc["cpu"]["temp"];
-  float ramLoad = doc["ram"]["load"];
-  float ramUsed = doc["ram"]["used"];
-  float diskR = doc["disk"]["read"] | 0.0;
-  float diskW = doc["disk"]["write"] | 0.0;
-  float netDL = doc["net"]["dl"];
-  float netUL = doc["net"]["ul"];
-
-  // 更新歷史紀錄 (每一幀都更新，保持 10 FPS 流暢度)
-  updateHistory(cpuHistory, cpuLoad);
-  updateHistory(ramHistory, ramLoad);
-  updateHistory(diskReadHistory, diskR);
-  updateHistory(diskWriteHistory, diskW);
-  updateHistory(netDlHistory, netDL);
-  updateHistory(netUlHistory, netUL);
-
-  // --- 1. 文字數據更新 (每秒一次) ---
-  // 定義靜態變數以快取文字數據
-  static unsigned long lastTextUpdate = 0;
-  static String s_mmdd = "--/--";
-  static String s_dayPart = "---";
-  static String s_hhmm = "--:--";
-  static String s_ss = "--";
-  static uint16_t s_statusColor = C_WARN;
-  static int s_cpuTemp = 0;
-  static uint16_t s_tempColor = C_TEXT;
-  static int s_cpuLoad = 0;
-  static float s_ramUsed = 0;
-  static int s_ramLoad = 0;
-  static float s_diskR = 0;
-  static float s_diskW = 0;
-  static float s_netDL = 0;
-  static float s_netUL = 0;
-
-  // 每秒更新一次快取變數
-  if (millis() - lastTextUpdate > 1000 || lastTextUpdate == 0) {
-    lastTextUpdate = millis();
-
-    String fullDate = String((const char*)doc["sys"]["date"]);
-    String timeStr = String((const char*)doc["sys"]["time"]);
-
-    // 解析日期與星期
-    int spaceIdx = fullDate.indexOf(' ');
-    String datePart = (spaceIdx > 0) ? fullDate.substring(0, spaceIdx) : fullDate;
-    String dayPart = (spaceIdx > 0) ? fullDate.substring(spaceIdx + 1) : "";
-
-    // 格式化日期：YYYY/M/D -> MM/DD
-    int firstSlash = datePart.indexOf('/');
-    int lastSlash = datePart.lastIndexOf('/');
-    String month = datePart.substring(firstSlash + 1, lastSlash);
-    String day = datePart.substring(lastSlash + 1);
-    if (month.length() == 1) month = "0" + month;
-    if (day.length() == 1) day = "0" + day;
-    s_mmdd = month + "/" + day;
-
-    // 格式化星期
-    dayPart.replace("(", "");
-    dayPart.replace(")", "");
-    dayPart.toUpperCase();
-    s_dayPart = dayPart;
-
-    // 時間
-    s_hhmm = (timeStr.length() >= 5) ? timeStr.substring(0, 5) : timeStr;
-    s_ss = (timeStr.length() >= 8) ? timeStr.substring(6) : "";
-
-    // 狀態
-    s_statusColor = isDataValid ? C_OK : C_WARN;
-
-    // CPU
-    s_cpuTemp = cpuTemp;
-    s_tempColor = (s_cpuTemp > 80) ? C_WARN : C_TEXT;
-    s_cpuLoad = (int)cpuLoad;
-    if (s_cpuLoad > 99) s_cpuLoad = 99;
-
-    // RAM
-    s_ramUsed = ramUsed;
-    s_ramLoad = (int)ramLoad;
-    if (s_ramLoad > 99) s_ramLoad = 99;
-
-    // Disk/Net
-    s_diskR = diskR;
-    s_diskW = diskW;
-    s_netDL = netDL;
-    s_netUL = netUL;
-  }
-
-  // --- 2. 文字繪製 (每一幀都重繪，但使用快取變數) ---
+  // 繪製文字
   {
     bgSprite.setTextColor(C_TEXT, C_PANEL);
     bgSprite.setTextSize(2);
@@ -377,7 +302,7 @@ void parseAndDisplay(String& json, bool isDataValid) {
     drawMetric(s_netUL, 244, 110, true);
   }
 
-  // --- 2. 圖表更新 (每一幀都更新) ---
+  // 圖表更新
   drawGraph(largeSprite, cpuHistory, 4, 106, C_CPU, 100);
   drawGraph(largeSprite, ramHistory, 84, 106, C_RAM, 100);
   drawGraph(smallSprite, diskReadHistory, 164, 68, C_DISK, 0);
@@ -385,39 +310,256 @@ void parseAndDisplay(String& json, bool isDataValid) {
   drawGraph(smallSprite, netDlHistory, 244, 68, C_NET, 0);
   drawGraph(smallSprite, netUlHistory, 244, 128, C_NET, 0);
 
-  // 當沒有連線 (模擬模式) 時，在最上層顯示 DEMO 標籤
-  if (!isDataValid) {
-    int boxW = 80;
-    int boxH = 32;
-    int boxX = (SCREEN_W - boxW) / 2;
-    int boxY = (SCREEN_H - boxH) / 2 + 2;
+  if (!isDataValid) drawDemoBox();
+}
 
-    // 繪製背景 (黑色) 與邊框 (紅色)
-    bgSprite.fillRoundRect(boxX, boxY, boxW, boxH, 6, C_BG);
-    bgSprite.drawRoundRect(boxX, boxY, boxW, boxH, 6, C_WARN);
+void parseAndDisplay(String& json, bool isDataValid) {
+  JsonDocument doc; // ArduinoJson v7 自動處理大小
+  DeserializationError error = deserializeJson(doc, json);
 
-    // 繪製文字
-    bgSprite.setTextColor(C_WARN, C_BG);
-    bgSprite.setTextSize(2);
-    bgSprite.setTextDatum(MC_DATUM);
-    bgSprite.drawString("DEMO", SCREEN_W / 2, SCREEN_H / 2);
-    bgSprite.setTextDatum(TL_DATUM); // 還原對齊設定
+  if (error) {
+    return;
+  }
+
+  // --- 按鈕處理 (切換頁面) ---
+  static unsigned long lastBtnTime = 0;
+  static bool btnPressed = false;
+  static int lastPage = 0;
+
+  if (digitalRead(PIN_BTN) == LOW) {
+    if (!btnPressed && millis() - lastBtnTime > 200) { // 防止連點與彈跳
+      currentPage = (currentPage + 1) % 3;
+      btnPressed = true;
+      lastBtnTime = millis();
+    }
+  } else {
+    btnPressed = false;
+  }
+
+  if (currentPage != lastPage) {
+    // 切換頁面時的強力清除邏輯
+    tft.fillScreen(C_BG);       // 1. 清除物理螢幕
+    if (bgSprite.created()) {   // 2. 確保 Sprite 已建立才操作
+      bgSprite.fillScreen(C_BG); 
+      bgSprite.pushSprite(0, 0);
+    }
+    lastPage = currentPage;
+  }
+
+  // --- 0. 預先解析數據 (供圖表與文字使用) ---
+  float cpuLoad = doc["cpu"]["load"];
+  int cpuTemp = doc["cpu"]["temp"];
+  float ramLoad = doc["ram"]["load"];
+  float ramUsed = doc["ram"]["used"];
+  float diskR = doc["disk"]["read"] | 0.0;
+  float diskW = doc["disk"]["write"] | 0.0;
+  float netDL = doc["net"]["dl"];
+  float netUL = doc["net"]["ul"];
+
+  // 更新歷史紀錄 (每一幀都更新，保持 10 FPS 流暢度)
+  updateHistory(cpuHistory, cpuLoad);
+  updateHistory(ramHistory, ramLoad);
+  updateHistory(diskReadHistory, diskR);
+  updateHistory(diskWriteHistory, diskW);
+  updateHistory(netDlHistory, netDL);
+  updateHistory(netUlHistory, netUL);
+
+  // --- 1. 文字數據更新 (每秒一次) ---
+  // 定義靜態變數以快取文字數據
+  static unsigned long lastTextUpdate = 0;
+
+  // 每秒更新一次快取變數
+  if (millis() - lastTextUpdate > 1000 || lastTextUpdate == 0) {
+    lastTextUpdate = millis();
+
+    String fullDate = String((const char*)doc["sys"]["date"]);
+    String timeStr = String((const char*)doc["sys"]["time"]);
+
+    // 解析日期與星期
+    int spaceIdx = fullDate.indexOf(' ');
+    String datePart = (spaceIdx > 0) ? fullDate.substring(0, spaceIdx) : fullDate;
+    String dayPart = (spaceIdx > 0) ? fullDate.substring(spaceIdx + 1) : "";
+
+    // 格式化日期：YYYY/M/D -> MM/DD
+    int firstSlash = datePart.indexOf('/');
+    int lastSlash = datePart.lastIndexOf('/');
+    String month = datePart.substring(firstSlash + 1, lastSlash);
+    String day = datePart.substring(lastSlash + 1);
+    if (month.length() == 1) month = "0" + month;
+    if (day.length() == 1) day = "0" + day;
+    s_mmdd = month + "/" + day;
+
+    // 格式化星期
+    dayPart.replace("(", "");
+    dayPart.replace(")", "");
+    dayPart.toUpperCase();
+    s_dayPart = dayPart;
+
+    // 時間
+    s_hhmm = (timeStr.length() >= 5) ? timeStr.substring(0, 5) : timeStr;
+    s_ss = (timeStr.length() >= 8) ? timeStr.substring(6) : "";
+
+    // 狀態
+    s_statusColor = isDataValid ? C_OK : C_WARN;
+
+    // CPU
+    s_cpuTemp = cpuTemp;
+    s_tempColor = (s_cpuTemp > 80) ? C_WARN : C_TEXT;
+    s_cpuLoad = (int)cpuLoad;
+    if (s_cpuLoad > 99) s_cpuLoad = 99;
+
+    // RAM
+    s_ramUsed = ramUsed;
+    s_ramLoad = (int)ramLoad;
+    if (s_ramLoad > 99) s_ramLoad = 99;
+
+    // Disk/Net
+    s_diskR = diskR;
+    s_diskW = diskW;
+    s_netDL = netDL;
+    s_netUL = netUL;
+  }
+
+  // --- 2. 根據頁面繪製 ---
+  bgSprite.fillScreen(C_BG); // 清除緩衝區
+
+  if (currentPage == 0) {
+    drawDashboard(isDataValid);
+  } else if (currentPage == 1) {
+    drawClockPage(isDataValid);
+  } else {
+    drawBigGraphPage(isDataValid);
   }
 
   // --- 最後一次性將緩衝區推送到螢幕，消除閃爍 ---
   bgSprite.pushSprite(0, 0);
 }
 
+// --- 頁面 2: 大時鐘 ---
+void drawClockPage(bool isDataValid) {
+  // 時間
+  bgSprite.setTextColor(C_TEXT, C_BG);
+  bgSprite.setTextDatum(MC_DATUM);
+  
+  // HH:MM (大字體)
+  bgSprite.setTextSize(7); // 內建字體 7 (7-segment style)
+  bgSprite.drawString(s_hhmm, SCREEN_W / 2, SCREEN_H / 2 - 20);
+
+  // 秒 (小一點)
+  bgSprite.setTextSize(4);
+  bgSprite.drawString(s_ss, SCREEN_W / 2 + 120, SCREEN_H / 2 + 10);
+
+  // 日期與星期
+  bgSprite.setTextColor(C_LABEL, C_BG);
+  bgSprite.setTextSize(3);
+  bgSprite.drawString(s_mmdd + "  " + s_dayPart, SCREEN_W / 2, SCREEN_H / 2 + 40);
+
+  // 底部狀態列
+  bgSprite.drawFastHLine(0, SCREEN_H - 25, SCREEN_W, C_GRID);
+  
+  bgSprite.setTextSize(2);
+  bgSprite.setTextDatum(ML_DATUM);
+  
+  // CPU 狀態
+  bgSprite.setTextColor(C_CPU, C_BG);
+  bgSprite.drawString("CPU: " + String(s_cpuLoad) + "%", 10, SCREEN_H - 12);
+  
+  // 溫度
+  bgSprite.setTextColor(s_tempColor, C_BG);
+  bgSprite.drawString(String(s_cpuTemp) + "C", 110, SCREEN_H - 12);
+
+  // RAM
+  bgSprite.setTextColor(C_RAM, C_BG);
+  bgSprite.drawString("RAM: " + String(s_ramLoad) + "%", 180, SCREEN_H - 12);
+
+  // 連線狀態點
+  bgSprite.fillCircle(SCREEN_W - 15, SCREEN_H - 12, 5, s_statusColor);
+}
+
+// --- 頁面 3: 詳細波形圖 ---
+void drawBigGraphPage(bool isDataValid) {
+  // 上半部: CPU
+  drawBigGraphOnBg(cpuHistory, 0, SCREEN_H/2 - 1, C_CPU, "CPU Load", s_cpuLoad, "%");
+  
+  // 下半部: RAM
+  drawBigGraphOnBg(ramHistory, SCREEN_H/2, SCREEN_H/2, C_RAM, "RAM Load", s_ramLoad, "%");
+
+  // 中間分隔線
+  bgSprite.drawFastHLine(0, SCREEN_H/2 - 1, SCREEN_W, C_GRID);
+
+  if (!isDataValid) drawDemoBox();
+}
+
+// 繪製全寬度圖表 (直接畫在 bgSprite 上)
+void drawBigGraphOnBg(float* history, int y, int h, uint16_t color, String label, int currentVal, String unit) {
+  // 繪製背景格線
+  bgSprite.drawFastHLine(0, y + h/2, SCREEN_W, C_GRID);
+  
+  float maxVal = 100.0;
+  
+  // 繪製波形 (從 0 到 319)
+  for (int i = 0; i < SCREEN_W - 1; i++) {
+    // 數據對應到高度
+    int y1 = map((long)(history[i] * 10), 0, (long)(maxVal * 10), y + h - 1, y);
+    int y2 = map((long)(history[i + 1] * 10), 0, (long)(maxVal * 10), y + h - 1, y);
+    
+    // 限制範圍
+    if (y1 < y) y1 = y; if (y1 >= y + h) y1 = y + h - 1;
+    if (y2 < y) y2 = y; if (y2 >= y + h) y2 = y + h - 1;
+
+    bgSprite.drawLine(i, y1, i + 1, y2, color);
+    
+    // 簡單的區域填充 (每 2 點畫一條垂直線，節省效能)
+    if (i % 2 == 0) {
+       bgSprite.drawFastVLine(i, y1, y + h - y1, tft.alphaBlend(50, color, C_BG));
+    }
+  }
+
+  // 顯示標籤與數值 (左上角)
+  bgSprite.setTextColor(C_TEXT, C_BG); // 使用背景色當底色，避免重疊
+  bgSprite.setTextSize(2);
+  bgSprite.setTextDatum(TL_DATUM);
+  bgSprite.drawString(label, 5, y + 5);
+
+  // 數值 (右上角)
+  bgSprite.setTextDatum(TR_DATUM);
+  bgSprite.setTextColor(color, C_BG);
+  bgSprite.setTextSize(3);
+  bgSprite.drawString(String(currentVal) + unit, SCREEN_W - 5, y + 5);
+}
+
+void drawDemoBox() {
+  int boxW = 80;
+  int boxH = 32;
+  int boxX = (SCREEN_W - boxW) / 2;
+  int boxY = (SCREEN_H - boxH) / 2 + 2;
+
+  // 繪製背景 (黑色) 與邊框 (紅色)
+  bgSprite.fillRoundRect(boxX, boxY, boxW, boxH, 6, C_BG);
+  bgSprite.drawRoundRect(boxX, boxY, boxW, boxH, 6, C_WARN);
+
+  // 繪製文字
+  bgSprite.setTextColor(C_WARN, C_BG);
+  bgSprite.setTextSize(2);
+  bgSprite.setTextDatum(MC_DATUM);
+  bgSprite.drawString("DEMO", SCREEN_W / 2, SCREEN_H / 2);
+  bgSprite.setTextDatum(TL_DATUM); // 還原對齊設定
+}
+
 void updateHistory(float* history, float value) {
-  for (int i = 0; i < GRAPH_W - 1; i++) {
+  for (int i = 0; i < HISTORY_LEN - 1; i++) {
     history[i] = history[i + 1];
   }
-  history[GRAPH_W - 1] = value;
+  history[HISTORY_LEN - 1] = value;
 }
 
 void drawGraph(TFT_eSprite &sprite, float* history, int x, int y, uint16_t color, float maxValOverride) {
   int w = sprite.width();
   int h = sprite.height();
+  
+  // 計算歷史資料的起始索引 (只取最後 w 筆)
+  int startIdx = HISTORY_LEN - w;
+  if (startIdx < 0) startIdx = 0;
   
   sprite.fillSprite(C_PANEL);
   sprite.drawFastHLine(0, 0, w, C_GRID);
@@ -428,12 +570,12 @@ void drawGraph(TFT_eSprite &sprite, float* history, int x, int y, uint16_t color
   if (maxValOverride > 0) {
     maxVal = maxValOverride;
   } else {
-    for(int i=0; i<GRAPH_W; i++) if(history[i] > maxVal) maxVal = history[i];
+    for(int i=0; i<w; i++) if(history[startIdx + i] > maxVal) maxVal = history[startIdx + i];
   }
 
   // 1. 繪製區域填充 (Area Fill Gradient)
-  for (int i = 0; i < GRAPH_W; i++) {
-    int valY = map((long)(history[i] * 10), 0, (long)(maxVal * 10), h - 1, 0);
+  for (int i = 0; i < w; i++) {
+    int valY = map((long)(history[startIdx + i] * 10), 0, (long)(maxVal * 10), h - 1, 0);
     if (valY < 0) valY = 0; if (valY >= h) valY = h - 1;
 
     int graphHeight = h - valY;
@@ -459,9 +601,9 @@ void drawGraph(TFT_eSprite &sprite, float* history, int x, int y, uint16_t color
   }
 
   // 2. 繪製頂部線條 (Line) - 保持銳利
-  for (int i = 0; i < GRAPH_W - 1; i++) {
-    int y1 = map((long)(history[i] * 10), 0, (long)(maxVal * 10), h - 1, 0);
-    int y2 = map((long)(history[i + 1] * 10), 0, (long)(maxVal * 10), h - 1, 0);
+  for (int i = 0; i < w - 1; i++) {
+    int y1 = map((long)(history[startIdx + i] * 10), 0, (long)(maxVal * 10), h - 1, 0);
+    int y2 = map((long)(history[startIdx + i + 1] * 10), 0, (long)(maxVal * 10), h - 1, 0);
     // 限制範圍
     if (y1 < 0) y1 = 0; if (y1 >= h) y1 = h - 1;
     if (y2 < 0) y2 = 0; if (y2 >= h) y2 = h - 1;
