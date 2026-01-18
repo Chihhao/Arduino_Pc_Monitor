@@ -132,7 +132,11 @@ void setup() {
 void loop() {
   if (Serial.available()) {
     String input = Serial.readStringUntil('\n');
-    if (input.length() > 0) {
+    input.trim(); // 去除前後空白與換行符號
+
+    if (input == "PING") {
+      Serial.println("PONG"); // 回應握手訊號
+    } else if (input.length() > 0) {
       parseAndDisplay(input, true);
       lastDataTime = millis();
     }
