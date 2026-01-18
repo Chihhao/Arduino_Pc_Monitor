@@ -359,6 +359,25 @@ void parseAndDisplay(String& json, bool isDataValid) {
   drawGraph(smallSprite, diskWriteHistory, 164, 128, C_DISK, 0);
   drawGraph(smallSprite, netDlHistory, 244, 68, C_NET, 0);
   drawGraph(smallSprite, netUlHistory, 244, 128, C_NET, 0);
+
+  // 當沒有連線 (模擬模式) 時，在最上層顯示 DEMO 標籤
+  if (!isDataValid) {
+    int boxW = 80;
+    int boxH = 32;
+    int boxX = (SCREEN_W - boxW) / 2;
+    int boxY = (SCREEN_H - boxH) / 2;
+
+    // 繪製背景 (黑色) 與邊框 (紅色)
+    tft.fillRoundRect(boxX, boxY, boxW, boxH, 6, C_BG);
+    tft.drawRoundRect(boxX, boxY, boxW, boxH, 6, C_WARN);
+
+    // 繪製文字
+    tft.setTextColor(C_WARN, C_BG);
+    tft.setTextSize(2);
+    tft.setTextDatum(MC_DATUM);
+    tft.drawString("DEMO", SCREEN_W / 2, SCREEN_H / 2);
+    tft.setTextDatum(TL_DATUM); // 還原對齊設定
+  }
 }
 
 void updateHistory(float* history, float value) {
