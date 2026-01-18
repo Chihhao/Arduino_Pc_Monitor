@@ -26,53 +26,64 @@
 *   **核心函式庫:** `LibreHardwareMonitor`
 *   **功能:**
     1.  每秒讀取一次系統資訊。
-    2.  **CPU:** 讀取使用率 (Total Load)、封裝溫度 (Package Temp)、封裝功耗 (Package Power)。
+    2.  **CPU:** 讀取使用率 (Total Load)、封裝溫度 (Package Temp)。
     3.  **RAM:** 讀取使用率 (Load)、已用記憶體 (Used)、總記憶體 (Total)。
-    4.  **Network:** 讀取所有網卡的總下載 (Download) 與上傳 (Upload) 速度。
-    5.  **System:** 取得當前日期與時間。
-    6.  將上述數據序列化為 JSON 字串並寫入 Serial Port。
+    4.  **Disk:** 讀取磁碟讀寫速度 (Read/Write)。
+    5.  **Network:** 讀取所有網卡的總下載 (Download) 與上傳 (Upload) 速度。
+    6.  **System:** 取得當前日期與時間。
+    7.  將上述數據序列化為 JSON 字串並寫入 Serial Port。
 
 ## 5. 軟體需求 (Device 端)
 *   **開發環境:** Arduino IDE / PlatformIO
 *   **核心函式庫:** `TFT_eSPI` (繪圖), `ArduinoJson` (解析)
 *   **介面佈局 (320x170):**
-    *   **頂部狀態列 (Status Bar):** 
-        *   左側: 日期 (e.g., "Oct 27")
-        *   右側: 時間 (e.g., "14:30:05")
-    *   **左側主區塊 (CPU):** 
-        *   顯示 CPU Load (大字體)。
-        *   顯示溫度 (動態變色: >80°C 紅色, 否則白色)。
-        *   顯示功耗 (Watts)。
-        *   **圖表:** 繪製 CPU Load 或 Temp 的歷史折線圖 (Line Chart)。
-    *   **右上方區塊 (RAM):**
-        *   顯示 RAM Load %。
-        *   顯示 "Used / Total GB"。
-        *   **圖表:** 簡單的長條進度條 (Progress Bar)。
-    *   **右下方區塊 (Network):**
-        *   顯示下載速度 (e.g., "DL: 15.2 MB/s")。
-        *   顯示上傳速度 (e.g., "UL: 2.1 MB/s")。
+    *   **頂部狀態列 (Status Bar):** 分為 5 個區塊
+        *   日期 (MM/DD)
+        *   星期 (e.g., SUN)
+        *   時間 (HH:MM)
+        *   秒數 (SS)
+        *   連線狀態指示燈
+    *   **主畫面 (Main Dashboard):** 分為 4 個垂直欄位 (Columns)
+        1.  **CPU:**
+            *   上方: 溫度 (°C, >80°C 變紅)。
+            *   下方: 使用率 (%, 大字體)。
+            *   圖表: 歷史折線圖 (含漸層填充)。
+        2.  **RAM:**
+            *   上方: 已用容量 (GB)。
+            *   下方: 使用率 (%, 大字體)。
+            *   圖表: 歷史折線圖 (含漸層填充)。
+        3.  **DISK:**
+            *   上方: 讀取速度 (Read Speed)。
+            *   下方: 寫入速度 (Write Speed)。
+            *   圖表: 上下兩組獨立折線圖。
+        4.  **NETWORK:**
+            *   上方: 下載速度 (Download)。
+            *   下方: 上傳速度 (Upload)。
+            *   圖表: 上下兩組獨立折線圖。
 
 ## 6. 通訊協定 (Data Protocol)
 *   **格式:** JSON
 *   **頻率:** 1Hz (每秒一次)
-*   **Baud Rate:** 115200 (或更高，視 USB CDC 效能而定)
+*   **Baud Rate:** 921600
 *   **JSON 範例:**
     ```json
     {
       "sys": {
-        "date": "2023-10-27",
+        "date": "2023/10/27 (Fri)",
         "time": "14:30:05"
       },
       "cpu": {
-        "name": "i7-12700",
         "load": 45.5,
-        "temp": 55,
-        "watt": 65.5
+        "temp": 55
       },
       "ram": {
         "load": 40.2,
         "used": 6.4,
         "total": 16.0
+      },
+      "disk": {
+        "read": 10.5,
+        "write": 5.2
       },
       "net": {
         "dl": 15.2,

@@ -63,7 +63,8 @@ unsigned long lastDataTime = 0;
 
 
 void setup() {
-  Serial.begin(921600); // 提高傳輸速率以減少延遲 (電腦端也需對應修改)
+  Serial.setRxBufferSize(2048); // 加大接收緩衝區，防止高速數據溢出
+  Serial.begin(115200); // 改為標準 115200，對於 10FPS 數據量已足夠且相容性更好 (電腦端需對應修改)
   
   // 初始化螢幕
   tft.init();
@@ -252,25 +253,25 @@ void parseAndDisplay(String& json, bool isDataValid) {
 
   if (mmdd != lastDate) {
     tft.setTextPadding(70);
-    tft.drawString(mmdd, 40, HEADER_STRING_Y); 
+    tft.drawString(mmdd, 41, HEADER_STRING_Y); 
     lastDate = mmdd;
   }
   if (dayPart != lastDay) {
     tft.setTextPadding(70);
-    tft.drawString(dayPart, 120, HEADER_STRING_Y); 
+    tft.drawString(dayPart, 121, HEADER_STRING_Y); 
     lastDay = dayPart;
   }
 
   tft.setTextPadding(70);
-  tft.drawString(hhmm, 200, HEADER_STRING_Y);
+  tft.drawString(hhmm, 201, HEADER_STRING_Y);
   
   tft.setTextPadding(30);
-  tft.drawString(ss, 260, HEADER_STRING_Y);
+  tft.drawString(ss, 261, HEADER_STRING_Y);
   tft.setTextPadding(0);
 
   // 狀態圖示
   uint16_t statusColor = isDataValid ? C_OK : C_WARN;
-  tft.fillCircle(300, 15, 5, statusColor); 
+  tft.fillCircle(300, 14, 5, statusColor); 
   
   tft.setTextDatum(TL_DATUM); // 置左
 
