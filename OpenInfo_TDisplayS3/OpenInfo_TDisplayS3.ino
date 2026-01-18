@@ -277,21 +277,31 @@ void parseAndDisplay(String& json, bool isDataValid) {
   // --- 3. RAM 欄 (x=82, w=76) ---
   // 負載
   if((int)ramLoad > 99) ramLoad = 99;
+  _y = 53;
+  _x = 135; // 82 + 53
   tft.setTextColor(C_RAM, C_PANEL);
-  tft.setTextDatum(TC_DATUM);
+  tft.setTextDatum(TR_DATUM);
   tft.setTextSize(3);
-  tft.fillRect(82, 51, 76, 25, C_PANEL);
-  tft.drawNumber((int)ramLoad, 120, 51);
+  tft.fillRect(82, _y, PANEL_WIDTH, 25, C_PANEL);
+  tft.drawNumber((int)ramLoad, _x, _y);
   tft.setTextSize(2);
-  tft.drawString("%", 144, 61);
+  tft.setTextDatum(TL_DATUM);
+  tft.drawString("%", _x, _y + 8);
 
-  // 已用
+  // 分隔線
+  tft.drawFastHLine(84, _y + 30, PANEL_WIDTH-4, C_GRID);
+
+  // 已用 RAM
+  _y = 90;
+  _x = 138; 
   tft.setTextColor(C_TEXT, C_PANEL);
+  tft.setTextDatum(TR_DATUM);
   tft.setTextSize(2);
-  tft.fillRect(82, 81, 76, 20, C_PANEL);
-  tft.drawString(String(ramUsed, 1), 120, 81);
+  tft.fillRect(82, _y, 76, 20, C_PANEL);
+  tft.drawFloat(ramUsed, 1, _x, _y);
   tft.setTextSize(1);
-  tft.drawString("GB", 148, 88);
+  tft.setTextDatum(TL_DATUM);
+  tft.drawString("GB", _x + 2, _y + 8);
 
   // 圖表
   drawGraph(largeSprite, ramHistory, 84, 110, C_RAM, 100);
