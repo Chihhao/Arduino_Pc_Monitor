@@ -127,8 +127,6 @@ void setup() {
     diskReadHistory[i] = 0; diskWriteHistory[i] = 0;
     netDlHistory[i] = 0; netUlHistory[i] = 0;
   }
-
-  // 移除此處的 drawStaticLayout，改在 parseAndDisplay 中每一幀繪製
 }
 
 void loop() {
@@ -206,7 +204,6 @@ int currentPage = 0; // 0: Dashboard, 1: Clock, 2: Big Graph
 // --- 頁面 1: Dashboard 繪圖邏輯 ---
 void drawDashboard(bool isDataValid) {
   // 繪製靜態佈局
-  // bgSprite.fillScreen(C_BG); // 已經在主迴圈清除過了
 
   int yTop = P_MARGIN;
   int hTop = 25;
@@ -356,8 +353,7 @@ void parseAndDisplay(String& json, bool isDataValid) {
   JsonDocument doc; // ArduinoJson v7 自動處理大小
   DeserializationError error = deserializeJson(doc, json);
 
-  // 修改: 即使 JSON 解析失敗，也不要直接 return，
-  // 這樣才能確保按鈕偵測和畫面重繪(使用舊數據)能持續運作。
+  // 即使 JSON 解析失敗，也不要直接 return，確保按鈕偵測和畫面重繪(使用舊數據)能持續運作。
 
   // --- 按鈕處理 (切換頁面) ---
   static unsigned long lastBtnTime = 0;
@@ -374,15 +370,11 @@ void parseAndDisplay(String& json, bool isDataValid) {
     btnPressed = false;
   }
 
-  // 移除換頁時的額外清除邏輯。
-  // 因為 bgSprite 是全螢幕大小且每一幀都會重繪並覆蓋，
-  // 額外的 fillRect 反而可能干擾驅動程式的視窗設定，導致右半邊無法更新。
   if (currentPage != lastPage) {
     lastPage = currentPage;
   }
 
   // --- 0. 預先解析數據 (供圖表與文字使用) ---
-  // 變數宣告移至外層，避免編譯錯誤
   float cpuLoad = 0;
   int cpuTemp = 0;
   float ramLoad = 0;
@@ -469,8 +461,7 @@ void parseAndDisplay(String& json, bool isDataValid) {
   }
 
   // --- 2. 根據頁面繪製 ---
-  // 修改: 不使用 fillScreen，改用 memset 強制歸零記憶體，防止殘留
-  // 這是最底層的清除方式，保證舊資料絕對不會留下來
+  // 使用 memset 強制歸零記憶體，這是最底層的清除方式，保證舊資料絕對不會留下來 (防止殘留)
   memset(bgSprite.getPointer(), 0, SCREEN_W * SCREEN_H * 2); 
   
   // 再使用 fillRect 填入我們想要的背景色
