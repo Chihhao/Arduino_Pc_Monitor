@@ -1,6 +1,19 @@
 /*
   專案：Arduino 電腦監控 (T-Display S3 版本)
   硬體：LilyGO T-Display S3 (ESP32-S3)
+    1. Board (開發板): ESP32S3 Dev Module
+    2. USB CDC On Boot: Enabled 
+    3. CPU Frequency: 240MHz (WiFi)
+    4. Core Debug Level: None
+    5. USB DFU On Boot: Disabled
+    6. Erase All Flash Before Sketch Upload: Disabled
+    7. Flash Mode: QIO 80MHz
+       說明：QIO 是最快的讀寫模式。如果燒錄後無法開機，可改試 DIO 80MHz，但 T-Display S3 通常支援 QIO。
+    8. Flash Size: 16MB (128Mb)
+       說明：這是此板子的標準規格。
+    9. Partition Scheme (分割區配置): 16M Flash (3MB APP/9.9MB FATFS)
+    10. PSRAM: OPI PSRAM 
+
   函式庫需求：
     1. TFT_eSPI (作者：Bodmer)
        *** 設定說明 ***
@@ -69,6 +82,19 @@ void setup() {
   Serial.setRxBufferSize(2048); // 加大接收緩衝區，防止高速數據溢出
   Serial.begin(115200); // 改為標準 115200，對於 10FPS 數據量已足夠且相容性更好 (電腦端需對應修改)
   
+  // 等待 Serial 連線，但最多只等 3 秒 (避免沒接電腦時卡住)
+  unsigned long waitStart = millis();
+  while (!Serial && (millis() - waitStart < 3000)) {
+    delay(10);
+  }
+
+  // Total PSRAM: 8386295
+  // Free PSRAM: 8386295
+  // Flash Size: 16 MB
+  Serial.printf("Total PSRAM: %d\n", ESP.getPsramSize());
+  Serial.printf("Free PSRAM: %d\n", ESP.getFreePsram());
+  Serial.printf("Flash Size: %d MB\n", ESP.getFlashChipSize() / 1024 / 1024);
+
   pinMode(PIN_BTN, INPUT_PULLUP); // 初始化按鈕
   
   // 初始化螢幕
@@ -79,6 +105,15 @@ void setup() {
 
   // 初始化 Sprite 以防止圖表閃爍
   bgSprite.createSprite(SCREEN_W, SCREEN_H); // 建立全螢幕緩衝區
+  if (!bgSprite.created()) {
+    Serial.println("BG Sprite create failed!");
+    tft.fillScreen(C_WARN);
+    tft.setTextColor(C_TEXT, C_WARN);
+    tft.drawString("PSRAM Alloc Failed!", 10, 50);
+    tft.drawString("Enable OPI PSRAM", 10, 80);
+    while(1) delay(1000); // 停在這裡，避免後續執行錯誤
+  }
+
   largeSprite.createSprite(DASH_GRAPH_W, GRAPH_H_L);
   smallSprite.createSprite(DASH_GRAPH_W, GRAPH_H_S);
   
@@ -339,10 +374,7 @@ void parseAndDisplay(String& json, bool isDataValid) {
   if (currentPage != lastPage) {
     // 切換頁面時的強力清除邏輯
     tft.fillScreen(C_BG);       // 1. 清除物理螢幕
-    if (bgSprite.created()) {   // 2. 確保 Sprite 已建立才操作
-      bgSprite.fillScreen(C_BG); 
-      bgSprite.pushSprite(0, 0);
-    }
+    // 移除此處多餘的 bgSprite 清除與推送，因為下方的主繪圖流程會立即處理
     lastPage = currentPage;
   }
 
