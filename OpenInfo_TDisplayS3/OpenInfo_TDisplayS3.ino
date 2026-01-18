@@ -134,8 +134,8 @@ void loop() {
     String input = Serial.readStringUntil('\n');
     input.trim(); // 去除前後空白與換行符號
 
-    if (input == "PING") {
-      Serial.println("PONG"); // 回應握手訊號
+    if (input == "WHO") {
+      Serial.println("TDISPLAYS3"); // 回應握手訊號
     } else if (input.length() > 0) {
       parseAndDisplay(input, true);
       lastDataTime = millis();
