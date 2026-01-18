@@ -34,7 +34,9 @@
 #define PIN_BTN 0 // 板載 Boot 按鈕
 
 // 顏色
-#define C_BG TFT_BLACK
+// 修改: 使用 0x0001 (極深藍/黑) 代替 0x0000 (純黑)。
+// 這能防止 ESP32-S3 DMA 傳輸時將純黑誤判為透明色，導致右半邊螢幕無法清除舊內容。
+#define C_BG 0x0001 
 #define C_PANEL 0x18E3 // 深灰
 #define C_TEXT TFT_WHITE
 #define C_LABEL 0x9CD3 // 淺灰
@@ -94,17 +96,22 @@ void setup() {
   Serial.printf("Total PSRAM: %d\n", ESP.getPsramSize());
   Serial.printf("Free PSRAM: %d\n", ESP.getFreePsram());
   Serial.printf("Flash Size: %d MB\n", ESP.getFlashChipSize() / 1024 / 1024);
+  // 預期輸出: Width: 320, Height: 170
 
   pinMode(PIN_BTN, INPUT_PULLUP); // 初始化按鈕
   
   // 初始化螢幕
   tft.init();
-  tft.setRotation(1); // 橫向 (USB 在右) 或 3 (USB 在左)
+  tft.setRotation(1); // 改回 1 (USB 在右)
+  
   tft.fillScreen(C_BG);
+  Serial.printf("TFT Width: %d, Height: %d\n", tft.width(), tft.height());
+  Serial.printf("C_BG Value: 0x%04X\n", C_BG); // 確認背景色是否為 0x0001
   tft.setTextDatum(TL_DATUM);
 
   // 初始化 Sprite 以防止圖表閃爍
   bgSprite.createSprite(SCREEN_W, SCREEN_H); // 建立全螢幕緩衝區
+  bgSprite.setSwapBytes(true); // 確保位元組順序正確，防止像素錯亂
   if (!bgSprite.created()) {
     Serial.println("BG Sprite create failed!");
     tft.fillScreen(C_WARN);
@@ -112,6 +119,8 @@ void setup() {
     tft.drawString("PSRAM Alloc Failed!", 10, 50);
     tft.drawString("Enable OPI PSRAM", 10, 80);
     while(1) delay(1000); // 停在這裡，避免後續執行錯誤
+  } else {
+    Serial.println("BG Sprite created successfully in PSRAM.");
   }
 
   largeSprite.createSprite(DASH_GRAPH_W, GRAPH_H_L);
@@ -352,56 +361,72 @@ void parseAndDisplay(String& json, bool isDataValid) {
   JsonDocument doc; // ArduinoJson v7 自動處理大小
   DeserializationError error = deserializeJson(doc, json);
 
-  if (error) {
-    return;
-  }
+  // 修改: 即使 JSON 解析失敗，也不要直接 return，
+  // 這樣才能確保按鈕偵測和畫面重繪(使用舊數據)能持續運作。
 
   // --- 按鈕處理 (切換頁面) ---
   static unsigned long lastBtnTime = 0;
   static bool btnPressed = false;
   static int lastPage = 0;
+  bool pageChanged = false; // 用於記錄本幀是否發生換頁
 
   if (digitalRead(PIN_BTN) == LOW) {
     if (!btnPressed && millis() - lastBtnTime > 200) { // 防止連點與彈跳
       currentPage = (currentPage + 1) % 3;
       btnPressed = true;
       lastBtnTime = millis();
+      Serial.printf("[Debug] Button Pressed. New Page Index: %d\n", currentPage);
     }
   } else {
     btnPressed = false;
   }
 
+  // 移除換頁時的額外清除邏輯。
+  // 因為 bgSprite 是全螢幕大小且每一幀都會重繪並覆蓋，
+  // 額外的 fillRect 反而可能干擾驅動程式的視窗設定，導致右半邊無法更新。
   if (currentPage != lastPage) {
-    // 切換頁面時的強力清除邏輯
-    tft.fillScreen(C_BG);       // 1. 清除物理螢幕
-    // 移除此處多餘的 bgSprite 清除與推送，因為下方的主繪圖流程會立即處理
+    Serial.printf("[Debug] Page Switching: %d -> %d\n", lastPage, currentPage);
+    pageChanged = true;
     lastPage = currentPage;
   }
 
   // --- 0. 預先解析數據 (供圖表與文字使用) ---
-  float cpuLoad = doc["cpu"]["load"];
-  int cpuTemp = doc["cpu"]["temp"];
-  float ramLoad = doc["ram"]["load"];
-  float ramUsed = doc["ram"]["used"];
-  float diskR = doc["disk"]["read"] | 0.0;
-  float diskW = doc["disk"]["write"] | 0.0;
-  float netDL = doc["net"]["dl"];
-  float netUL = doc["net"]["ul"];
+  // 變數宣告移至外層，避免編譯錯誤
+  float cpuLoad = 0;
+  int cpuTemp = 0;
+  float ramLoad = 0;
+  float ramUsed = 0;
+  float diskR = 0;
+  float diskW = 0;
+  float netDL = 0;
+  float netUL = 0;
 
-  // 更新歷史紀錄 (每一幀都更新，保持 10 FPS 流暢度)
-  updateHistory(cpuHistory, cpuLoad);
-  updateHistory(ramHistory, ramLoad);
-  updateHistory(diskReadHistory, diskR);
-  updateHistory(diskWriteHistory, diskW);
-  updateHistory(netDlHistory, netDL);
-  updateHistory(netUlHistory, netUL);
+  // 只有當 JSON 正確時才更新數據，否則沿用上一幀的數據
+  if (!error) {
+    cpuLoad = doc["cpu"]["load"];
+    cpuTemp = doc["cpu"]["temp"];
+    ramLoad = doc["ram"]["load"];
+    ramUsed = doc["ram"]["used"];
+    diskR = doc["disk"]["read"] | 0.0;
+    diskW = doc["disk"]["write"] | 0.0;
+    netDL = doc["net"]["dl"];
+    netUL = doc["net"]["ul"];
+
+    // 更新歷史紀錄
+    updateHistory(cpuHistory, cpuLoad);
+    updateHistory(ramHistory, ramLoad);
+    updateHistory(diskReadHistory, diskR);
+    updateHistory(diskWriteHistory, diskW);
+    updateHistory(netDlHistory, netDL);
+    updateHistory(netUlHistory, netUL);
+  }
 
   // --- 1. 文字數據更新 (每秒一次) ---
   // 定義靜態變數以快取文字數據
   static unsigned long lastTextUpdate = 0;
 
-  // 每秒更新一次快取變數
-  if (millis() - lastTextUpdate > 1000 || lastTextUpdate == 0) {
+  // 每秒更新一次快取變數 (且必須 JSON 有效)
+  if (!error && (millis() - lastTextUpdate > 1000 || lastTextUpdate == 0)) {
     lastTextUpdate = millis();
 
     String fullDate = String((const char*)doc["sys"]["date"]);
@@ -453,7 +478,12 @@ void parseAndDisplay(String& json, bool isDataValid) {
   }
 
   // --- 2. 根據頁面繪製 ---
-  bgSprite.fillScreen(C_BG); // 清除緩衝區
+  // 修改: 不使用 fillScreen，改用 memset 強制歸零記憶體，防止殘留
+  // 這是最底層的清除方式，保證舊資料絕對不會留下來
+  memset(bgSprite.getPointer(), 0, SCREEN_W * SCREEN_H * 2); 
+  
+  // 再使用 fillRect 填入我們想要的背景色 (0x0001)
+  bgSprite.fillRect(0, 0, SCREEN_W, SCREEN_H, C_BG);
 
   if (currentPage == 0) {
     drawDashboard(isDataValid);
@@ -464,7 +494,24 @@ void parseAndDisplay(String& json, bool isDataValid) {
   }
 
   // --- 最後一次性將緩衝區推送到螢幕，消除閃爍 ---
-  bgSprite.pushSprite(0, 0);
+  if (pageChanged) {
+    Serial.println("[Debug] Pushing Sprite (Page Changed)...");
+    Serial.printf("[Debug] TFT Size: %d x %d\n", tft.width(), tft.height());
+    unsigned long tStart = millis();
+    
+    // 修改: 將全螢幕 Sprite 分成上下兩半推送，避開 ESP32 DMA 單次傳輸 64KB 的限制
+    // 全螢幕 320x170x2 = 108,800 bytes，超過 65535 bytes 會導致後半段(右半邊)無法更新
+    uint16_t* spritePtr = (uint16_t*)bgSprite.getPointer();
+    tft.pushImage(0, 0, 320, 85, spritePtr); // 推送上半部 (Rows 0-84)
+    tft.pushImage(0, 85, 320, 85, spritePtr + (320 * 85)); // 推送下半部 (Rows 85-169)
+    
+    Serial.printf("[Debug] PushSprite Done. Time: %lu ms\n", millis() - tStart);
+  } else {
+    // 平常更新也使用分段推送，確保畫面一致且無殘留
+    uint16_t* spritePtr = (uint16_t*)bgSprite.getPointer();
+    tft.pushImage(0, 0, 320, 85, spritePtr);
+    tft.pushImage(0, 85, 320, 85, spritePtr + (320 * 85));
+  }
 }
 
 // --- 頁面 2: 大時鐘 ---
