@@ -47,7 +47,7 @@ TFT_eSprite smallSprite = TFT_eSprite(&tft);
 
 // 圖表全域變數
 #define GRAPH_W 72      // 76px 面板 - 4px 內距 (每邊 2px)
-#define GRAPH_H_L 54    // 大圖表高度 (CPU/RAM)
+#define GRAPH_H_L 58    // 大圖表高度 (CPU/RAM)
 #define GRAPH_H_S 36    // 小圖表高度 (Disk/Net)
 
 float cpuHistory[GRAPH_W];
@@ -278,67 +278,69 @@ void parseAndDisplay(String& json, bool isDataValid) {
   int _x, _y;
 
     // --- CPU 文字 ---
+    // CPU 溫度
+    uint16_t tempColor = (cpuTemp > 80) ? C_WARN : C_TEXT;
+    _y = 50;
+    _x = 46; 
+    tft.setTextColor(tempColor, C_PANEL);
+    tft.setTextDatum(TR_DATUM);
+    tft.setTextSize(2);
+    tft.fillRect(2, _y, PANEL_WIDTH, 20, C_PANEL);
+    tft.drawNumber(cpuTemp, _x - 3, _y);
+    tft.setTextDatum(TL_DATUM);
+    tft.drawString("C", _x + 5, _y);          
+    tft.drawCircle(_x, _y + 2 , 2, tempColor); 
+
+    // 分隔線
+    tft.drawFastHLine(4, _y + 18, PANEL_WIDTH-4, C_GRID);
+
+    // CPU Load 
     float dispCpuLoad = cpuLoad;
     if((int)dispCpuLoad > 99) dispCpuLoad = 99;
     uint16_t cpuColor = C_CPU;
 
-  _y = 53;
-  _x = 55; // 數字與單位的分隔位置
-  tft.setTextColor(cpuColor, C_PANEL);
-  tft.setTextDatum(TR_DATUM);
-  tft.setTextSize(3);
-  tft.fillRect(2, _y, PANEL_WIDTH, 25, C_PANEL); // TODO: 確認清除區域是否正確
+    _y = 77;
+    _x = 55; 
+    tft.setTextColor(cpuColor, C_PANEL);
+    tft.setTextDatum(TR_DATUM);
+    tft.setTextSize(3);
+    tft.fillRect(2, _y, PANEL_WIDTH, 25, C_PANEL);
     tft.drawNumber((int)dispCpuLoad, _x, _y);
-  tft.setTextSize(2);
-  tft.setTextDatum(TL_DATUM);
-  tft.drawString("%", _x, _y + 8);
-  
-  // 分隔線
-  tft.drawFastHLine(4, _y + 30, PANEL_WIDTH-4, C_GRID);
-
-  // 溫度
-  uint16_t tempColor = (cpuTemp > 80) ? C_WARN : C_TEXT;
-  _y = 90;
-  _x = 48; // 數字與單位的分隔位置
-  tft.setTextColor(tempColor, C_PANEL);
-  tft.setTextDatum(TR_DATUM);
-  tft.setTextSize(2);
-  tft.fillRect(2, _y, 76, 20, C_PANEL);  // TODO: 確認清除區域是否正確
-  tft.drawNumber(cpuTemp, _x - 3, _y);
-  tft.setTextDatum(TL_DATUM);
-  tft.drawString("C", _x + 5, _y);          
-  tft.drawCircle(_x, _y + 2 , 2, tempColor); 
+    tft.setTextSize(2);
+    tft.setTextDatum(TL_DATUM);
+    tft.drawString("%", _x, _y + 8);
 
     // --- RAM 文字 ---
+    // 已用 RAM (移至上方)
+    _y = 50;
+    _x = 138; 
+    tft.setTextColor(C_TEXT, C_PANEL);
+    tft.setTextDatum(TR_DATUM);
+    tft.setTextSize(2);
+    tft.fillRect(82, _y, PANEL_WIDTH, 20, C_PANEL);
+    tft.drawFloat(ramUsed, 1, _x, _y);
+    tft.setTextSize(1);
+    tft.setTextDatum(TL_DATUM);
+    tft.drawString("GB", _x + 2, _y + 8);
+
+    // 分隔線
+    tft.drawFastHLine(84, _y + 18, PANEL_WIDTH-4, C_GRID);
+
+    // RAM Load (移至下方)
     float dispRamLoad = ramLoad;
     if((int)dispRamLoad > 99) dispRamLoad = 99;
     uint16_t ramColor = C_RAM;
 
-  _y = 53;
-  _x = 135; // 82 + 53
-  tft.setTextColor(ramColor, C_PANEL);
-  tft.setTextDatum(TR_DATUM);
-  tft.setTextSize(3);
-  tft.fillRect(82, _y, PANEL_WIDTH, 25, C_PANEL);
+    _y = 77;
+    _x = 135; // 82 + 53
+    tft.setTextColor(ramColor, C_PANEL);
+    tft.setTextDatum(TR_DATUM);
+    tft.setTextSize(3);
+    tft.fillRect(82, _y, PANEL_WIDTH, 25, C_PANEL);
     tft.drawNumber((int)dispRamLoad, _x, _y);
-  tft.setTextSize(2);
-  tft.setTextDatum(TL_DATUM);
-  tft.drawString("%", _x, _y + 8);
-
-  // 分隔線
-  tft.drawFastHLine(84, _y + 30, PANEL_WIDTH-4, C_GRID);
-
-  // 已用 RAM
-  _y = 90;
-  _x = 138; 
-  tft.setTextColor(C_TEXT, C_PANEL);
-  tft.setTextDatum(TR_DATUM);
-  tft.setTextSize(2);
-  tft.fillRect(82, _y, 76, 20, C_PANEL);
-  tft.drawFloat(ramUsed, 1, _x, _y);
-  tft.setTextSize(1);
-  tft.setTextDatum(TL_DATUM);
-  tft.drawString("GB", _x + 2, _y + 8);
+    tft.setTextSize(2);
+    tft.setTextDatum(TL_DATUM);
+    tft.drawString("%", _x, _y + 8);
 
     // --- Disk 文字 ---
   drawMetric(diskR, 164, 50, false);
@@ -350,8 +352,8 @@ void parseAndDisplay(String& json, bool isDataValid) {
   }
 
   // --- 2. 圖表更新 (每一幀都更新) ---
-  drawGraph(largeSprite, cpuHistory, 4, 110, C_CPU, 100);
-  drawGraph(largeSprite, ramHistory, 84, 110, C_RAM, 100);
+  drawGraph(largeSprite, cpuHistory, 4, 106, C_CPU, 100);
+  drawGraph(largeSprite, ramHistory, 84, 106, C_RAM, 100);
   drawGraph(smallSprite, diskReadHistory, 164, 68, C_DISK, 0);
   drawGraph(smallSprite, diskWriteHistory, 164, 128, C_DISK, 0);
   drawGraph(smallSprite, netDlHistory, 244, 68, C_NET, 0);
