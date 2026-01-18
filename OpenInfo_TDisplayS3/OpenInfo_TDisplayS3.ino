@@ -541,7 +541,31 @@ void drawBigGraphOnBg(float* history, int y, int h, uint16_t color, String label
   
   float maxVal = 100.0;
   
-  // 繪製波形 (從 0 到 319)
+  // 1. 繪製區域填充 (移植自 drawGraph 的漸層演算法)
+  for (int i = 0; i < SCREEN_W; i++) {
+    int valY = map((long)(history[i] * 10), 0, (long)(maxVal * 10), y + h - 1, y);
+    if (valY < y) valY = y; if (valY >= y + h) valY = y + h - 1;
+
+    int graphHeight = (y + h) - valY;
+
+    for (int row = valY; row < y + h; row++) {
+       // 背景是 C_BG，但中間有一條 C_GRID 格線
+       uint16_t bg = (row == y + h/2) ? C_GRID : C_BG;
+
+       // 計算透明度，創造由上而下變淡的效果
+       int alpha = 0;
+       if (graphHeight > 0) {
+         alpha = 150 - (150 * (row - valY) / graphHeight);
+       }
+       
+       if (alpha > 0) {
+         uint16_t blended = tft.alphaBlend(alpha, color, bg);
+         bgSprite.drawPixel(i, row, blended);
+       }
+    }
+  }
+
+  // 2. 繪製頂部線條 (保持銳利)
   for (int i = 0; i < SCREEN_W - 1; i++) {
     // 數據對應到高度
     int y1 = map((long)(history[i] * 10), 0, (long)(maxVal * 10), y + h - 1, y);
@@ -552,11 +576,6 @@ void drawBigGraphOnBg(float* history, int y, int h, uint16_t color, String label
     if (y2 < y) y2 = y; if (y2 >= y + h) y2 = y + h - 1;
 
     bgSprite.drawLine(i, y1, i + 1, y2, color);
-    
-    // 簡單的區域填充 (每 2 點畫一條垂直線，節省效能)
-    if (i % 2 == 0) {
-       bgSprite.drawFastVLine(i, y1, y + h - y1, tft.alphaBlend(50, color, C_BG));
-    }
   }
 
   // 顯示標籤與數值 (左上角)
