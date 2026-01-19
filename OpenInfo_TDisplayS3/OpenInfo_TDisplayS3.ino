@@ -120,33 +120,72 @@ void setup() {
   }
 
   largeSprite.createSprite(DASH_GRAPH_W, GRAPH_H_L);
+  if (!largeSprite.created()) Serial.println("Large Sprite create failed!");
   smallSprite.createSprite(DASH_GRAPH_W, GRAPH_H_S);
+  if (!smallSprite.created()) Serial.println("Small Sprite create failed!");
   
   // 初始化歷史緩衝區
-  for(int i=0; i<HISTORY_LEN; i++) {
-    cpuHistory[i] = 0; ramHistory[i] = 0;
-    diskReadHistory[i] = 0; diskWriteHistory[i] = 0;
-    netDlHistory[i] = 0; netUlHistory[i] = 0;
-  }
+  clearHistory();
 }
 
+// 新增變數：追蹤軟體是否主動連線
+bool softwareConnected = false;
+bool isSleeping = false; // 新增：螢幕休眠狀態
+int currentPage = 0; // 0: Dashboard, 1: Clock, 2: Big Graph
+
 void loop() {
+  // 如果物理連線中斷，軟體連線也視為中斷
+  if (!Serial) softwareConnected = false;
+
+  // 偵測連線狀態變化，並在切換時清空歷史紀錄
+  // 現在「線上」的定義是：USB 線插著 (Serial) 且 軟體有在傳資料 (softwareConnected)
+  bool isOnline = (bool)Serial && softwareConnected;
+  static bool wasOnline = false; 
+
+  if (isOnline != wasOnline) {
+    clearHistory();
+    wasOnline = isOnline;
+  }
+
   if (Serial.available()) {
     String input = Serial.readStringUntil('\n');
     input.trim(); // 去除前後空白與換行符號
 
     if (input == "WHO") {
       Serial.println("TDISPLAYS3"); // 回應握手訊號
+    } else if (input == "BYE") {
+      softwareConnected = false;    // 收到 Python 的結束訊號
+    } else if (input == "SLEEP") {
+      isSleeping = true;
+      tft.fillScreen(TFT_BLACK);    // 立即黑屏
+      softwareConnected = true;
+    } else if (input == "MODE1") {
+      currentPage = 0;
+      isSleeping = false;           // 切換模式時喚醒
+      softwareConnected = true;
+    } else if (input == "MODE2") {
+      currentPage = 1;
+      isSleeping = false;
+      softwareConnected = true;
+    } else if (input == "MODE3") {
+      currentPage = 2;
+      isSleeping = false;
+      softwareConnected = true;
+    } else if (input == "FLIP") {
+      tft.setRotation(tft.getRotation() == 1 ? 3 : 1); // 切換旋轉方向 (1 <-> 3)
+      isSleeping = false;
+      softwareConnected = true;
     } else if (input.length() > 0) {
+      softwareConnected = true;     // 收到有效資料，標記為已連線
       parseAndDisplay(input, true);
       lastDataTime = millis();
     }
   } else {
     // 若無可用資料，則檢查連線狀態來決定下一步
     if (millis() - lastDataTime > 100) { // 以 10FPS 的頻率更新，確保 UI 反應
-      if (Serial) {
+      if (isOnline) {
         // 連線中但閒置：重繪畫面以處理按鈕事件，但不進入 DEMO
-        String dummy = "{}";
+        String dummy = ""; // 傳送空字串，讓解析失敗從而沿用舊數據，避免畫面歸零閃爍
         parseAndDisplay(dummy, true);
       } else {
         // 已斷線：執行 DEMO 模式
@@ -156,6 +195,16 @@ void loop() {
       lastDataTime = millis();
     }
   }
+}
+
+void clearHistory() {
+  // 使用 memset 歸零，比 for 迴圈更有效率
+  memset(cpuHistory, 0, sizeof(cpuHistory));
+  memset(ramHistory, 0, sizeof(ramHistory));
+  memset(diskReadHistory, 0, sizeof(diskReadHistory));
+  memset(diskWriteHistory, 0, sizeof(diskWriteHistory));
+  memset(netDlHistory, 0, sizeof(netDlHistory));
+  memset(netUlHistory, 0, sizeof(netUlHistory));
 }
 
 void simulateData() {
@@ -211,8 +260,6 @@ float s_diskR = 0;
 float s_diskW = 0;
 float s_netDL = 0;
 float s_netUL = 0;
-
-int currentPage = 0; // 0: Dashboard, 1: Clock, 2: Big Graph
 
 // --- 頁面 1: Dashboard 繪圖邏輯 ---
 void drawDashboard(bool isDataValid) {
@@ -378,6 +425,7 @@ void parseAndDisplay(String& json, bool isDataValid) {
       currentPage = (currentPage + 1) % 3;
       btnPressed = true;
       lastBtnTime = millis();
+      isSleeping = false; // 按鈕喚醒
     }
   } else {
     btnPressed = false;
@@ -472,6 +520,9 @@ void parseAndDisplay(String& json, bool isDataValid) {
     s_netDL = netDL;
     s_netUL = netUL;
   }
+
+  // 如果處於休眠模式，則不繪製畫面
+  if (isSleeping) return;
 
   // --- 2. 根據頁面繪製 ---
   // 使用 memset 強制歸零記憶體，這是最底層的清除方式，保證舊資料絕對不會留下來 (防止殘留)

@@ -4,6 +4,7 @@ import serial
 import psutil
 import platform
 from datetime import datetime
+import threading
 
 # ================= 設定區域 =================
 # 請修改為您的 ESP32 埠號 (在終端機輸入 ls /dev/tty.* 查看)
@@ -21,20 +22,8 @@ def get_cpu_temp():
     # 如果您有安裝特定的溫度讀取工具，可以在此修改
     return 45
 
-def main():
-    print(f"--- Mac 系統監控傳輸工具 ---")
-    print(f"目標埠號: {SERIAL_PORT}")
-    print(f"傳輸速率: {BAUD_RATE}")
-    print("正在連線...")
-
-    try:
-        ser = serial.Serial(SERIAL_PORT, BAUD_RATE, timeout=1)
-        print("✅ 連線成功！數據傳輸中... (按 Ctrl+C 停止)")
-    except serial.SerialException as e:
-        print(f"\n❌ 無法開啟序列埠：{e}")
-        print("請檢查：\n1. ESP32 是否已連接\n2. 埠號是否正確 (ls /dev/tty.*)\n3. 是否有其他程式佔用了該埠口")
-        return
-
+def monitor_task(ser, stop_event):
+    """背景執行緒：負責蒐集數據並傳送 JSON"""
     # 初始化計數器 (用於計算網速與硬碟讀寫速度)
     last_net = psutil.net_io_counters()
     last_disk = psutil.disk_io_counters()
@@ -44,9 +33,9 @@ def main():
     psutil.cpu_percent(interval=None)
 
     try:
-        while True:
+        while not stop_event.is_set():
             # --- 1. 控制刷新率與 CPU 計算 ---
-            # interval=0.1 會讓程式暫停 0.1 秒，並計算這段時間內的 CPU 平均負載
+            # interval=0.2 會讓程式暫停 0.1 秒，並計算這段時間內的 CPU 平均負載
             # 這剛好讓我們達到約 10 FPS 的傳輸頻率
             cpu_load = psutil.cpu_percent(interval=0.1)
             
@@ -120,12 +109,54 @@ def main():
             # 在終端機印出簡單狀態以確認運作中
             # print(f"Sent: CPU {cpu_load}% | RAM {ram_load}%")
 
-    except KeyboardInterrupt:
-        print("\n程式已停止")
-        ser.close()
+            # --- 5. 讀取並印出 ESP32 回傳的訊息 ---
+            while ser.in_waiting:
+                try:
+                    line = ser.readline().decode('utf-8', errors='ignore').strip()
+                    if line:
+                        print(f"[ESP32] {line}")
+                except Exception:
+                    pass
+
     except Exception as e:
-        print(f"發生錯誤：{e}")
+        print(f"背景監控執行緒發生錯誤：{e}")
+
+def main():
+    print(f"--- Mac 系統監控傳輸工具 ---")
+    print(f"目標埠號: {SERIAL_PORT}")
+    print(f"傳輸速率: {BAUD_RATE}")
+    print("正在連線...")
+
+    try:
+        ser = serial.Serial(SERIAL_PORT, BAUD_RATE, timeout=1)
+        print("✅ 連線成功！")
+        print("👉 您現在可以在此輸入指令 (例如: SLEEP, MODE1, FLIP, WHO)")
+        print("👉 輸入 'exit' 或按 Ctrl+C 離開")
+    except serial.SerialException as e:
+        print(f"\n❌ 無法開啟序列埠：{e}")
+        print("請檢查：\n1. ESP32 是否已連接\n2. 埠號是否正確 (ls /dev/tty.*)\n3. 是否有其他程式佔用了該埠口")
+        return
+
+    stop_event = threading.Event()
+    t = threading.Thread(target=monitor_task, args=(ser, stop_event))
+    t.start()
+
+    try:
+        while True:
+            cmd = input() # 等待使用者輸入指令
+            if cmd.strip().lower() == "exit":
+                break
+            if ser.is_open and cmd.strip():
+                ser.write((cmd.strip() + '\n').encode('utf-8'))
+                
+    except KeyboardInterrupt:
+        pass
+    finally:
+        print("\n正在停止...")
+        stop_event.set()
+        t.join()
         if ser.is_open:
+            ser.write(b"BYE\n") # 告訴 ESP32 我要離開了
             ser.close()
 
 if __name__ == "__main__":
