@@ -24,6 +24,13 @@
    (7) 硬體材料: Arduino Nano, LCD2004(I2C)  
    (8) 3D列印外殼: https://www.thingiverse.com/thing:4171171  
 
+### 3. T-Display S3 Monitor (使用 LilyGO T-Display S3)
+   (1) PC Client: C# WinForms (.NET Framework 4.7.2), 現代化深色介面
+   (2) Firmware: Arduino (ESP32-S3)
+   (3) 硬體材料: LilyGO T-Display S3 (1.9吋 IPS 彩色螢幕)
+   (4) 特色: USB Type-C 連接, 高速傳輸 (921600 baud), 支援 CPU/RAM/Disk/Network 監控與歷史曲線
+   (5) Demo 影片: https://youtu.be/AJtOAfcR8xE?si=AT0A4pmWd7Vyct4b
+
 ## 成果展示
 ![image](https://github.com/Chihhao/Arduino_Pc_Monitor/blob/master/image/wiring.png)
 ![image](https://github.com/Chihhao/Arduino_Pc_Monitor/blob/master/image/1.jpg)
