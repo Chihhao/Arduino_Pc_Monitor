@@ -587,18 +587,18 @@ void parseAndDisplay(String& json, bool isDataValid) {
 void drawClockPage(bool isDataValid) {
   // 定義日曆區域 (150x150, Margin 10)
   int margin = 10;
-  int gap = 15;
+  int gap = 12;
   int calX = margin;
   int calY = margin;
   int calW = 150;
   int calH = 150;
 
-  // 右側區域設定 (日曆右側 + 10px 間距)
+  // 右側區域設定 
   int rightX = margin + calW + gap; 
   int rightW = SCREEN_W - margin - calW - gap - margin;
   int rightCenterX = rightX + rightW / 2 + 2;
 
-  // --- 左側：日曆 (擬真風格) ---
+  // --- 左側：日曆---
   // 日曆紙背景
   bgSprite.fillRect(calX, calY, calW, calH, 0xE71C);
   
@@ -624,9 +624,9 @@ void drawClockPage(bool isDataValid) {
   // --- 右側：時鐘與狀態 ---
   // 時間 (HH:MM) 分割顯示，冒號閃爍
   bgSprite.setTextColor(C_TEXT, C_BG);
-  bgSprite.setTextSize(5); // 縮小字體以適應較窄的右側空間
+  bgSprite.setTextSize(5); 
   
-  int timeY = 60; 
+  int timeY = 62; 
   String hh = (s_hhmm.length() >= 2) ? s_hhmm.substring(0, 2) : "--";
   String mm = (s_hhmm.length() >= 5) ? s_hhmm.substring(3, 5) : "--";
 
@@ -645,18 +645,16 @@ void drawClockPage(bool isDataValid) {
     bgSprite.drawString(":", rightCenterX, timeY - 2);
   }
 
-  // --- CPU / RAM 使用率 (精緻化進度條) ---
-  int barY_second = 15;
+  // --- CPU / RAM 使用率---
+  int barY_second = 16;
   int barY_cpu = 116;
   int barY_ram = 150;
   int barX = rightX;
   int barW = rightW;
   int barH = 6;
 
-
   // 秒數進度條
   bgSprite.drawRoundRect(barX, barY_second, barW, barH, 2, C_GRID);
-  // 進度條前景
   int seconds = s_ss.toInt();
   int secBarW = map(seconds, 0, 60, 0, barW);
   if (secBarW > 0) {
