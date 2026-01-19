@@ -32,6 +32,7 @@
 #define SCREEN_H 170
 
 #define PIN_BTN 0 // 板載 Boot 按鈕
+#define PIN_BTN_ROT 14 // 板載 IO14 按鈕 (左邊那顆，若是 AMOLED 版請改為 21)
 
 // 顏色
 #define C_BG TFT_BLACK
@@ -98,6 +99,7 @@ void setup() {
   Serial.println("TDISPLAYS3");
 
   pinMode(PIN_BTN, INPUT_PULLUP); // 初始化按鈕
+  pinMode(PIN_BTN_ROT, INPUT_PULLUP); // 初始化旋轉按鈕
   
   // 初始化螢幕
   tft.init();
@@ -429,6 +431,21 @@ void parseAndDisplay(String& json, bool isDataValid) {
     }
   } else {
     btnPressed = false;
+  }
+
+  // --- 按鈕 2 處理 (旋轉螢幕) ---
+  static unsigned long lastBtn2Time = 0;
+  static bool btn2Pressed = false;
+
+  if (digitalRead(PIN_BTN_ROT) == LOW) {
+    if (!btn2Pressed && millis() - lastBtn2Time > 200) { // 防彈跳
+      tft.setRotation(tft.getRotation() == 1 ? 3 : 1); // 切換 1 (USB右) <-> 3 (USB左)
+      btn2Pressed = true;
+      lastBtn2Time = millis();
+      isSleeping = false; // 按鈕喚醒
+    }
+  } else {
+    btn2Pressed = false;
   }
 
   if (currentPage != lastPage) {
