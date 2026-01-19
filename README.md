@@ -31,7 +31,7 @@
    (4) 特色: USB Type-C 連接, 高速傳輸 (921600 baud), 支援 CPU/RAM/Disk/Network 監控與歷史曲線  
 
 ## 成果展示
-[![T-Display S3 Monitor Demo](https://img.youtube.com/vi/AJtOAfcR8xE/maxresdefault.jpg)](https://www.youtube.com/watch?v=AJtOAfcR8xE)
+[![Watch the video](https://raw.githubusercontent.com/gabriel-vasile/mimetype-icon-js/master/images/play-button.png)](https://www.youtube.com/watch?v=AJtOAfcR8xE)
 ![image](https://github.com/Chihhao/Arduino_Pc_Monitor/blob/master/image/wiring.png)
 ![image](https://github.com/Chihhao/Arduino_Pc_Monitor/blob/master/image/1.jpg)
 ![image](https://github.com/Chihhao/Arduino_Pc_Monitor/blob/master/image/2.jpg)
