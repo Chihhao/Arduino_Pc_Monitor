@@ -95,6 +95,7 @@ void setup() {
   Serial.printf("Free PSRAM: %d\n", ESP.getFreePsram());
   Serial.printf("Flash Size: %d MB\n", ESP.getFlashChipSize() / 1024 / 1024);
   // 預期輸出: Width: 320, Height: 170
+  Serial.println("TDISPLAYS3");
 
   pinMode(PIN_BTN, INPUT_PULLUP); // 初始化按鈕
   
