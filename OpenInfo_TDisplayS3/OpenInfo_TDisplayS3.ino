@@ -142,9 +142,17 @@ void loop() {
       lastDataTime = millis();
     }
   } else {
-    // 模擬模式：改為 100ms (10 FPS)
-    if (millis() - lastDataTime > 100) {
-      simulateData();
+    // 若無可用資料，則檢查連線狀態來決定下一步
+    if (millis() - lastDataTime > 100) { // 以 10FPS 的頻率更新，確保 UI 反應
+      if (Serial) {
+        // 連線中但閒置：重繪畫面以處理按鈕事件，但不進入 DEMO
+        String dummy = "{}";
+        parseAndDisplay(dummy, true);
+      } else {
+        // 已斷線：執行 DEMO 模式
+        simulateData();
+      }
+      // 更新時間戳，以維持 10FPS 的更新率
       lastDataTime = millis();
     }
   }
