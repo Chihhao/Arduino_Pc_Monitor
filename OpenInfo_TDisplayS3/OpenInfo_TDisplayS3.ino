@@ -720,25 +720,30 @@ void drawBigGraphOnBg(float* history, int y, int h, uint16_t color, String label
   
   float maxVal = 100.0;
   
-  // 1. 繪製區域填充 (移植自 drawGraph 的漸層演算法)
+  // --- 效能優化: 預先計算漸層顏色表 (LUT) ---
+  // 透過預先生成漸層中所有可能的顏色，避免在繪製每個像素時重複呼叫昂貴的 alphaBlend 函式。
+  uint16_t gradientLut_bg[151];   // 用於混合到 C_BG (主背景) 的顏色表
+  uint16_t gradientLut_grid[151]; // 用於混合到 C_GRID (格線) 的顏色表
+  for (int a = 0; a <= 150; a++) {
+    gradientLut_bg[a] = tft.alphaBlend(a, color, C_BG);
+    gradientLut_grid[a] = tft.alphaBlend(a, color, C_GRID);
+  }
+  
+  // 1. 繪製區域填充 (使用 LUT 優化)
   for (int i = 0; i < SCREEN_W; i++) {
     int valY = map((long)(history[i] * 10), 0, (long)(maxVal * 10), y + h - 1, y);
     if (valY < y) valY = y; if (valY >= y + h) valY = y + h - 1;
 
     int graphHeight = (y + h) - valY;
+    if (graphHeight <= 0) continue; // 如果沒有高度，則跳過此垂直線的繪製
 
     for (int row = valY; row < y + h; row++) {
-       // 背景是 C_BG，但中間有一條 C_GRID 格線
-       uint16_t bg = (row == y + h/2) ? C_GRID : C_BG;
-
        // 計算透明度，創造由上而下變淡的效果
-       int alpha = 0;
-       if (graphHeight > 0) {
-         alpha = 150 - (150 * (row - valY) / graphHeight);
-       }
+       int alpha = 150 - (150 * (row - valY) / graphHeight);
        
        if (alpha > 0) {
-         uint16_t blended = tft.alphaBlend(alpha, color, bg);
+         // 從預算表中直接查找顏色，取代即時混合
+         uint16_t blended = (row == y + h/2) ? gradientLut_grid[alpha] : gradientLut_bg[alpha];
          bgSprite.drawPixel(i, row, blended);
        }
     }
