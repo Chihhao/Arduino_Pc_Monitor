@@ -35,9 +35,10 @@ def monitor_task(ser, stop_event):
     try:
         while not stop_event.is_set():
             # --- 1. 控制刷新率與 CPU 計算 ---
-            # interval=0.2 會讓程式暫停 0.1 秒，並計算這段時間內的 CPU 平均負載
-            # 這剛好讓我們達到約 10 FPS 的傳輸頻率
-            cpu_load = psutil.cpu_percent(interval=0.1)
+            # 使用 time.sleep 控制刷新率，並使用 interval=None 計算「距離上次呼叫」期間的 CPU 使用率
+            # 這樣能包含程式運算期間的負載，避免在高性能機器上因監測時間過短而顯示 0%
+            time.sleep(0.1)
+            cpu_load = psutil.cpu_percent(interval=None)
             
             current_time = time.time()
             time_delta = current_time - last_time

@@ -702,10 +702,10 @@ void drawClockPage(bool isDataValid) {
 // --- 頁面 3: 詳細波形圖 ---
 void drawBigGraphPage(bool isDataValid) {
   // 上半部: CPU
-  drawBigGraphOnBg(cpuHistory, 0, SCREEN_H/2 - 1, C_CPU, "CPU Load", s_cpuLoad, "%");
+  drawBigGraphOnBg(cpuHistory, 0, SCREEN_H/2 - 1, C_CPU, "CPU", s_cpuLoad, "%");
   
   // 下半部: RAM
-  drawBigGraphOnBg(ramHistory, SCREEN_H/2, SCREEN_H/2, C_RAM, "RAM Load", s_ramLoad, "%");
+  drawBigGraphOnBg(ramHistory, SCREEN_H/2, SCREEN_H/2, C_RAM, "RAM", s_ramLoad, "%");
 
   // 中間分隔線
   bgSprite.drawFastHLine(0, SCREEN_H/2 - 1, SCREEN_W, C_GRID);
@@ -758,15 +758,15 @@ void drawBigGraphOnBg(float* history, int y, int h, uint16_t color, String label
   }
 
   // 顯示標籤與數值 (左上角)
-  bgSprite.setTextColor(C_TEXT, C_BG); // 使用背景色當底色，避免重疊
+  bgSprite.setTextColor(C_TEXT); // 背景透明
   bgSprite.setTextSize(2);
   bgSprite.setTextDatum(TL_DATUM);
   bgSprite.drawString(label, 5, y + 5);
 
   // 數值 (右上角)
   bgSprite.setTextDatum(TR_DATUM);
-  bgSprite.setTextColor(color, C_BG);
-  bgSprite.setTextSize(3);
+  bgSprite.setTextColor(color); // 背景透明
+  bgSprite.setTextSize(2);
   bgSprite.drawString(String(currentVal) + unit, SCREEN_W - 5, y + 5);
 }
 
@@ -784,7 +784,7 @@ void drawDemoBox() {
   bgSprite.setTextColor(C_WARN, C_BG);
   bgSprite.setTextSize(2);
   bgSprite.setTextDatum(MC_DATUM);
-  bgSprite.drawString("DEMO", SCREEN_W / 2, SCREEN_H / 2);
+  bgSprite.drawString("DEMO", SCREEN_W / 2, SCREEN_H / 2 + 3);
   bgSprite.setTextDatum(TL_DATUM); // 還原對齊設定
 }
 
