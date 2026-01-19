@@ -252,6 +252,9 @@ String s_mmdd = "--/--";
 String s_dayPart = "---";
 String s_hhmm = "--:--";
 String s_ss = "--";
+String s_year = "----";
+String s_month_str = "---";
+String s_day_num = "--";
 uint16_t s_statusColor = C_WARN;
 int s_cpuTemp = 0;
 uint16_t s_tempColor = C_TEXT;
@@ -501,8 +504,28 @@ void parseAndDisplay(String& json, bool isDataValid) {
     // 格式化日期：YYYY/M/D -> MM/DD
     int firstSlash = datePart.indexOf('/');
     int lastSlash = datePart.lastIndexOf('/');
-    String month = datePart.substring(firstSlash + 1, lastSlash);
-    String day = datePart.substring(lastSlash + 1);
+    s_year = datePart.substring(0, firstSlash);
+    String month_num_str = datePart.substring(firstSlash + 1, lastSlash);
+    s_day_num = datePart.substring(lastSlash + 1);
+
+    // 將月份數字轉為英文縮寫
+    switch(month_num_str.toInt()) {
+        case 1: s_month_str = "JAN"; break;
+        case 2: s_month_str = "FEB"; break;
+        case 3: s_month_str = "MAR"; break;
+        case 4: s_month_str = "APR"; break;
+        case 5: s_month_str = "MAY"; break;
+        case 6: s_month_str = "JUN"; break;
+        case 7: s_month_str = "JUL"; break;
+        case 8: s_month_str = "AUG"; break;
+        case 9: s_month_str = "SEP"; break;
+        case 10: s_month_str = "OCT"; break;
+        case 11: s_month_str = "NOV"; break;
+        case 12: s_month_str = "DEC"; break;
+        default: s_month_str = "---"; break;
+    }
+    String month = month_num_str;
+    String day = s_day_num;
     if (month.length() == 1) month = "0" + month;
     if (day.length() == 1) day = "0" + day;
     s_mmdd = month + "/" + day;
@@ -562,43 +585,117 @@ void parseAndDisplay(String& json, bool isDataValid) {
 
 // --- 頁面 2: 大時鐘 ---
 void drawClockPage(bool isDataValid) {
-  // 時間
-  bgSprite.setTextColor(C_TEXT, C_BG);
-  bgSprite.setTextDatum(MC_DATUM);
+  // 定義日曆區域 (150x150, Margin 10)
+  int margin = 10;
+  int gap = 15;
+  int calX = margin;
+  int calY = margin;
+  int calW = 150;
+  int calH = 150;
+
+  // 右側區域設定 (日曆右側 + 10px 間距)
+  int rightX = margin + calW + gap; 
+  int rightW = SCREEN_W - margin - calW - gap - margin;
+  int rightCenterX = rightX + rightW / 2 + 2;
+
+  // --- 左側：日曆 (擬真風格) ---
+  // 日曆紙背景
+  bgSprite.fillRect(calX, calY, calW, calH, 0xE71C);
   
-  // HH:MM (大字體)
-  bgSprite.setTextSize(7); // 內建字體 7 (7-segment style)
-  bgSprite.drawString(s_hhmm, SCREEN_W / 2, SCREEN_H / 2 - 20);
-
-  // 秒 (小一點)
-  bgSprite.setTextSize(4);
-  bgSprite.drawString(s_ss, SCREEN_W / 2 + 120, SCREEN_H / 2 + 10);
-
-  // 日期與星期
-  bgSprite.setTextColor(C_LABEL, C_BG);
-  bgSprite.setTextSize(3);
-  bgSprite.drawString(s_mmdd + "  " + s_dayPart, SCREEN_W / 2, SCREEN_H / 2 + 40);
-
-  // 底部狀態列
-  bgSprite.drawFastHLine(0, SCREEN_H - 25, SCREEN_W, C_GRID);
-  
+  // 頂部紅色橫條
+  bgSprite.fillRect(calX, calY, calW, 28, C_WARN);
+  bgSprite.setTextColor(TFT_WHITE, C_WARN);
   bgSprite.setTextSize(2);
+  bgSprite.setTextDatum(MC_DATUM);
+  bgSprite.drawString(s_month_str + " " + s_year, calX + calW / 2, calY + 15);
+
+  // 中間：巨大日期
+  bgSprite.setTextColor(TFT_BLACK, 0xE71C);
+  bgSprite.setTextDatum(MC_DATUM);
+  bgSprite.setTextSize(10); // 縮小字體以適應 150px 高度
+  bgSprite.drawString(s_day_num, calX + calW / 2, calY + 75); 
+
+  // 底部：星期
+  bgSprite.setTextColor(TFT_BLACK, 0xE71C); 
+  bgSprite.setTextSize(3);
+  bgSprite.setTextDatum(BC_DATUM);
+  bgSprite.drawString(s_dayPart, calX + calW / 2, calY + calH - 10);
+
+  // --- 右側：時鐘與狀態 ---
+  // 時間 (HH:MM) 分割顯示，冒號閃爍
+  bgSprite.setTextColor(C_TEXT, C_BG);
+  bgSprite.setTextSize(5); // 縮小字體以適應較窄的右側空間
+  
+  int timeY = 60; 
+  String hh = (s_hhmm.length() >= 2) ? s_hhmm.substring(0, 2) : "--";
+  String mm = (s_hhmm.length() >= 5) ? s_hhmm.substring(3, 5) : "--";
+
+  // 時
+  bgSprite.setTextDatum(MR_DATUM);
+  bgSprite.drawString(hh, rightCenterX - 8, timeY);
+  
+  // 分
   bgSprite.setTextDatum(ML_DATUM);
-  
-  // CPU 狀態
+  bgSprite.drawString(mm, rightCenterX + 8, timeY);
+
+  // 冒號 (每秒閃爍)
+  if (millis() % 1000 < 500) {
+    bgSprite.setTextColor(C_TEXT); // 使用透明背景，避免遮擋
+    bgSprite.setTextDatum(MC_DATUM);
+    bgSprite.drawString(":", rightCenterX, timeY - 2);
+  }
+
+  // --- CPU / RAM 使用率 (精緻化進度條) ---
+  int barY_second = 15;
+  int barY_cpu = 116;
+  int barY_ram = 150;
+  int barX = rightX;
+  int barW = rightW;
+  int barH = 6;
+
+
+  // 秒數進度條
+  bgSprite.drawRoundRect(barX, barY_second, barW, barH, 2, C_GRID);
+  // 進度條前景
+  int seconds = s_ss.toInt();
+  int secBarW = map(seconds, 0, 60, 0, barW);
+  if (secBarW > 0) {
+    bgSprite.fillRoundRect(barX, barY_second, secBarW, barH, 2, C_ACCENT);
+  }
+
+  // CPU
   bgSprite.setTextColor(C_CPU, C_BG);
-  bgSprite.drawString("CPU: " + String(s_cpuLoad) + "%", 10, SCREEN_H - 12);
-  
-  // 溫度
-  bgSprite.setTextColor(s_tempColor, C_BG);
-  bgSprite.drawString(String(s_cpuTemp) + "C", 110, SCREEN_H - 12);
+  bgSprite.setTextSize(2);
+  bgSprite.setTextDatum(TL_DATUM);
+  bgSprite.drawString("CPU", barX, barY_cpu - 18);
+  bgSprite.setTextSize(2);
+  bgSprite.setTextDatum(TR_DATUM);
+  bgSprite.drawString(String(s_cpuLoad) + "%", barX + barW, barY_cpu - 18);
+  // 進度條背景
+  bgSprite.drawRoundRect(barX, barY_cpu, barW, barH, 2, C_GRID);
+  // 進度條前景
+  int cpuBarW = map(s_cpuLoad, 0, 100, 0, barW);
+  if (cpuBarW > 0) {
+    bgSprite.fillRoundRect(barX, barY_cpu, cpuBarW, barH, 2, C_CPU);
+  }
 
   // RAM
   bgSprite.setTextColor(C_RAM, C_BG);
-  bgSprite.drawString("RAM: " + String(s_ramLoad) + "%", 180, SCREEN_H - 12);
+  bgSprite.setTextSize(2);
+  bgSprite.setTextDatum(TL_DATUM);
+  bgSprite.drawString("RAM", barX, barY_ram - 18);
+  bgSprite.setTextSize(2);
+  bgSprite.setTextDatum(TR_DATUM);
+  bgSprite.drawString(String(s_ramLoad) + "%", barX + barW, barY_ram - 18);
+  // 進度條背景
+  bgSprite.drawRoundRect(barX, barY_ram, barW, barH, 2, C_GRID);
+  // 進度條前景
+  int ramBarW = map(s_ramLoad, 0, 100, 0, barW);
+  if (ramBarW > 0) {
+    bgSprite.fillRoundRect(barX, barY_ram, ramBarW, barH, 2, C_RAM);
+  }
 
-  // 連線狀態點
-  bgSprite.fillCircle(SCREEN_W - 15, SCREEN_H - 12, 5, s_statusColor);
+  if (!isDataValid) drawDemoBox();
 }
 
 // --- 頁面 3: 詳細波形圖 ---
