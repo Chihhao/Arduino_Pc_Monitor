@@ -674,7 +674,9 @@ void drawClockPage(bool isDataValid) {
   // 進度條前景
   int cpuBarW = map(s_cpuLoad, 0, 100, 0, barW);
   if (cpuBarW > 0) {
-    bgSprite.fillRoundRect(barX, barY_cpu, cpuBarW, barH, 2, C_CPU);
+    // 若負載超過 80% 則顯示紅色警示
+    uint16_t barColor = (s_cpuLoad > 80) ? C_WARN : C_CPU;
+    bgSprite.fillRoundRect(barX, barY_cpu, cpuBarW, barH, 2, barColor);
   }
 
   // RAM
@@ -690,7 +692,8 @@ void drawClockPage(bool isDataValid) {
   // 進度條前景
   int ramBarW = map(s_ramLoad, 0, 100, 0, barW);
   if (ramBarW > 0) {
-    bgSprite.fillRoundRect(barX, barY_ram, ramBarW, barH, 2, C_RAM);
+    uint16_t barColor = (s_ramLoad > 80) ? C_WARN : C_RAM;
+    bgSprite.fillRoundRect(barX, barY_ram, ramBarW, barH, 2, barColor);
   }
 
   if (!isDataValid) drawDemoBox();
